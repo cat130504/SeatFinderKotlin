@@ -1,4 +1,4 @@
-package com.example.appmobile
+package com.example.seatfinder
 
 import android.app.Application
 
