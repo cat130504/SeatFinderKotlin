@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seatfinder.domain.stats.StatsConfig
 import com.example.seatfinder.domain.stats.calcolaFasciaConsigliata
+import com.example.seatfinder.domain.stats.giorniDaOggi
 import kotlinx.coroutines.delay
 import java.util.Calendar
 
@@ -25,8 +26,14 @@ fun StatsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    val todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1   // 0 = domenica
+    val oraCorrente = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
     var edificioSel by remember { mutableStateOf<Int?>(null) }
     var quotaSel    by remember { mutableStateOf<String?>(null) }
+
+    var giornoSel by remember(todayDow) { mutableIntStateOf(giorniDaOggi(todayDow).first()) }
+
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -56,18 +63,14 @@ fun StatsScreen(
         else state.statoAttuale.filter { it.edificioId == edificioSel }
     }
 
+    val fasciaConsigliata: Int? = remember(rowsFiltrate, giornoSel, todayDow, oraCorrente) {
+        val oraMinima = if (giornoSel == todayDow) oraCorrente else 0
+        calcolaFasciaConsigliata(rowsFiltrate, giornoSel, oraMinima)
+    }
+
     if (state.loading && state.rows.isEmpty()) {
         Box(modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
         return
-    }
-
-    // Calcola una volta sola "oggi" e "adesso"
-    val todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
-    val oraCorrente = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-
-    // Fascia consigliata condivisa tra heatmap e card
-    val fasciaConsigliata: Int? = remember(rowsFiltrate, todayDow, oraCorrente) {
-        calcolaFasciaConsigliata(rowsFiltrate, todayDow, oraCorrente)
     }
 
     Column(
@@ -132,7 +135,20 @@ fun StatsScreen(
             }
         }
 
-        SezioneHeatmap(rowsFiltrate, todayDow, oraCorrente, fasciaConsigliata)
-        SezioneMigliorOrario(rowsFiltrate, todayDow, fasciaConsigliata)
+        SezioneHeatmap(
+            rows = rowsFiltrate,
+            todayDow = todayDow,
+            oraCorrente = oraCorrente,
+            giornoSel = giornoSel,
+            fasciaConsigliata = fasciaConsigliata
+        )
+
+        SezioneMigliorOrario(
+            rows = rowsFiltrate,
+            todayDow = todayDow,
+            giornoSel = giornoSel,
+            onGiornoChange = { giornoSel = it },
+            fasciaConsigliata = fasciaConsigliata
+        )
     }
 }

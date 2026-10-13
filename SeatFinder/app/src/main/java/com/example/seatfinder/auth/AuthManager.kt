@@ -3,6 +3,7 @@ package com.example.seatfinder.auth
 import android.content.Context
 import android.content.Intent
 import com.example.seatfinder.service.PingServiceLauncher
+import androidx.core.content.edit
 
 object AuthManager {
 

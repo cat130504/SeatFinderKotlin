@@ -2,6 +2,7 @@ package com.example.seatfinder.ui.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -27,7 +28,7 @@ fun PlanBadge(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Star,
+                imageVector = Icons.Default.LocationOn,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )

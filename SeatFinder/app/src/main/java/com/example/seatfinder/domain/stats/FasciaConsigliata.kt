@@ -4,23 +4,29 @@ import com.example.seatfinder.data.remote.dto.StatsFlussoRow
 
 enum class LivelloAffluenza { LIBERA, POCO_AFFOLLATA, AFFOLLATA }
 
-/**
- * Restituisce l'ora (es. 14) con meno occupazioni storiche per il giorno indicato.
- * Considera solo le ore da [oraCorrente] in poi; se non ce ne sono, guarda tutta la giornata.
- */
+
+fun giorniDaOggi(todayDow: Int): List<Int> = buildList {
+    var d = if (todayDow in StatsConfig.GIORNI_FERIALI) todayDow else 1
+    repeat(5) {
+        add(d)
+        d = if (d == 5) 1 else d + 1
+    }
+}
+
+
 fun calcolaFasciaConsigliata(
     rows: List<StatsFlussoRow>,
-    todayDow: Int,
-    oraCorrente: Int
+    giornoSettimana: Int,
+    oraMinima: Int
 ): Int? {
-    val oggiPerOra = rows
-        .filter { it.giorno_settimana == todayDow }
+    val perOra = rows
+        .filter { it.giorno_settimana == giornoSettimana }
         .groupBy { it.ora }
         .mapValues { (_, list) -> list.sumOf { it.occupazioni_totali } }
         .filterKeys { it in StatsConfig.ORE_APERTURA }
 
-    val oreFuture = oggiPerOra.filterKeys { it >= oraCorrente }
-    val candidati = oreFuture.ifEmpty { oggiPerOra }
+    val oreFuture = perOra.filterKeys { it >= oraMinima }
+    val candidati = oreFuture.ifEmpty { perOra }
 
     return candidati.minByOrNull { it.value }?.key
 }
@@ -39,5 +45,6 @@ fun livelloAffluenza(occupazioni: Int): LivelloAffluenza = when {
     else -> LivelloAffluenza.AFFOLLATA
 }
 
+
 fun mediaGiornaliera(occupazioni: Int): Float =
-    occupazioni / StatsConfig.GIORNI_STORICO.toFloat()
+    occupazioni / (StatsConfig.GIORNI_STORICO / 7f)

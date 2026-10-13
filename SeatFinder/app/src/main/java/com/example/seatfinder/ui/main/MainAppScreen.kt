@@ -28,6 +28,7 @@ import com.example.seatfinder.ui.map.generaOpzioniPiani
 import com.example.seatfinder.ui.navigation.Destination
 import com.example.seatfinder.ui.qr.QrScreen
 import com.example.seatfinder.ui.stats.StatsScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
@@ -38,7 +39,6 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
     val infoTavolo by viewModel.infoTavolo.collectAsState()
     val edifici by viewModel.edifici.collectAsState()
     val selezione by viewModel.selezione.collectAsState()
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -72,7 +72,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
             nome = SessionManager.nome ?: SessionManager.iniziali ?: "Utente",
             onConfirmLogout = {
                 showProfileDialog = false
-                AuthManager.logout(context)
+                viewModel.logout { AuthManager.logout(context) }
             },
             onDismiss = { showProfileDialog = false }
         )
@@ -135,11 +135,11 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
             }
 
             if (currentRoute == Destination.MAP.route) {
-                selezione.quota?.let { quota ->
+                selezione.let { quota ->
                     PlanBadge(
-                        planName = "Piano: $quota",
+                        planName = "Edificio: ${selezione.edificio?.nome}   Piano: ${selezione.quota}",
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     )
                 }

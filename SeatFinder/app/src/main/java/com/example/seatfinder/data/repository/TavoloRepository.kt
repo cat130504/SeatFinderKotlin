@@ -22,21 +22,16 @@ import kotlin.time.ExperimentalTime
 
 object TavoloRepository {
 
-    // ==================== STATO IN MEMORIA ====================
 
-    // ---------- Tavolo attualmente occupato ----------
     private val _tavoloAttuale = MutableStateFlow<Int?>(null)
     val tavoloAttuale: StateFlow<Int?> = _tavoloAttuale.asStateFlow()
 
-    // ---------- Tick di refresh per la mappa ----------
-    // Incrementato ogni volta che qualcosa cambia (occupazione/liberazione),
-    // così MapScreen può ricaricare i tavoli dal DB anche se la quota non cambia.
+
     private val _refreshTick = MutableStateFlow(0)
     val refreshTick: StateFlow<Int> = _refreshTick.asStateFlow()
 
     fun setTavolo(id: Int?) {
         _tavoloAttuale.value = id
-        // Qualsiasi cambio di stato del tavolo invalida la mappa
         _refreshTick.value++
     }
 
@@ -70,7 +65,6 @@ object TavoloRepository {
         try {
             withContext(Dispatchers.IO) {
 
-                // 1. Aggiorna stato tavolo
                 SupabaseClient.client.from("tavolo").update(
                     TavoloUpdate(is_occupato = true)
                 ) {
@@ -82,7 +76,6 @@ object TavoloRepository {
                     mapOf("tavolo_id" to idTavolo)
                 )
 
-                // 2. Inserisci nuova occupazione
                 SupabaseClient.client.from("occupazione").insert(
                     OccupazioneInsert(
                         id_utente = idUtente,
@@ -104,7 +97,6 @@ object TavoloRepository {
             withContext(Dispatchers.IO) {
                 Log.d("DEBUG", "Provo a liberare tavolo con id=$idTavolo per utente=${SessionManager.userId}")
 
-                // 1. Trova la riga di occupazione di QUESTO utente per QUESTO tavolo
                 val occupazioneAperta = SupabaseClient.client.from("occupazione")
                     .select {
                         filter {
@@ -122,20 +114,17 @@ object TavoloRepository {
 
                 val idOccupazione = occupazioneAperta.first().id
 
-                // 2. Chiudi SOLO la riga di questo utente
                 SupabaseClient.client.from("occupazione").update({
                     set("data_liberazione", Clock.System.now().toString())
                 }) {
                     filter { eq("id", idOccupazione) }
                 }
 
-                // 3. Incrementa i posti disponibili
                 SupabaseClient.client.postgrest.rpc(
                     "incPostiTavolo",
                     mapOf("tavolo_id" to idTavolo)
                 )
 
-                // 4. Leggi lo stato aggiornato del tavolo per vedere se è tornato tutto libero
                 val tavoloAggiornato = SupabaseClient.client.from("tavolo")
                     .select {
                         filter { eq("id", idTavolo) }
@@ -144,7 +133,6 @@ object TavoloRepository {
                     .firstOrNull()
 
                 if (tavoloAggiornato != null && tavoloAggiornato.postiDisponibili >= tavoloAggiornato.posti) {
-                    // Tutti i posti sono liberi: il tavolo è completamente libero
                     SupabaseClient.client.from("tavolo").update({
                         set("is_occupato", false)
                     }) {

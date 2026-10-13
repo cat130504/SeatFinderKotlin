@@ -18,23 +18,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.seatfinder.data.remote.dto.StatsFlussoRow
 import com.example.seatfinder.domain.stats.StatsConfig
+import com.example.seatfinder.domain.stats.giorniDaOggi
 
-private val LABEL_GIORNI = listOf("Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab")
+internal val LABEL_GIORNI = listOf("Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab")
 
 @Composable
 internal fun SezioneHeatmap(
     rows: List<StatsFlussoRow>,
     todayDow: Int,
     oraCorrente: Int,
+    giornoSel: Int,
     fasciaConsigliata: Int?
 ) {
-    val ordine = buildList {
-        var d = if (todayDow in StatsConfig.GIORNI_FERIALI) todayDow else 1
-        repeat(5) {
-            add(d)
-            d = if (d == 5) 1 else d + 1
-        }
-    }
+    val ordine = giorniDaOggi(todayDow)
     val labels = ordine.map { LABEL_GIORNI[it] }
 
     val mappaAggregata = remember(rows) {
@@ -47,7 +43,16 @@ internal fun SezioneHeatmap(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Affluenza settimanale", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
-            HeatmapGrid(mappaAggregata, ordine, labels, maxTot, oraCorrente, fasciaConsigliata, todayDow)
+            HeatmapGrid(
+                mappaAggregata = mappaAggregata,
+                ordine = ordine,
+                labels = labels,
+                maxTot = maxTot,
+                oraCorrente = oraCorrente,
+                fasciaConsigliata = fasciaConsigliata,
+                todayDow = todayDow,
+                giornoSel = giornoSel
+            )
             LegendaHeatmap()
         }
     }
@@ -61,7 +66,8 @@ private fun HeatmapGrid(
     maxTot: Int,
     oraCorrente: Int,
     fasciaConsigliata: Int?,
-    todayDow: Int
+    todayDow: Int,
+    giornoSel: Int
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
 
@@ -105,8 +111,9 @@ private fun HeatmapGrid(
                 ordine.forEach { dow ->
                     val n = mappaAggregata[dow to h] ?: 0
                     val occ = (n.toFloat() / maxTot).coerceIn(0f, 1f)
-                    val isOggi = dow == todayDow
-                    val isConsigliata = isOggi && fasciaConsigliata == h
+
+                    // Bordo sulla fascia consigliata del giorno scelto (non più solo di oggi)
+                    val isConsigliata = dow == giornoSel && fasciaConsigliata == h
 
                     val coloreBordo = MaterialTheme.colorScheme.primary
 
@@ -117,7 +124,7 @@ private fun HeatmapGrid(
                             .padding(1.dp)
                     ) {
                         if (isConsigliata) {
-                            // Bordo azzurro spesso + gap interno per staccare dal colore della cella
+                            // Bordo spesso + gap interno per staccare dal colore della cella
                             Box(
                                 Modifier
                                     .fillMaxSize()

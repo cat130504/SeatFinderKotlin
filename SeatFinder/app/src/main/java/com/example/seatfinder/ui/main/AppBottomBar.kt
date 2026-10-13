@@ -10,7 +10,7 @@ import com.example.seatfinder.ui.navigation.Destination
 @Composable
 fun AppBottomBar(
     currentRoute: String?,
-    scanEnabled: Boolean,                  // la scansione è disabilitata se hai già un tavolo
+    scanEnabled: Boolean,
     onDestinationClick: (Destination) -> Unit
 ) {
     NavigationBar {

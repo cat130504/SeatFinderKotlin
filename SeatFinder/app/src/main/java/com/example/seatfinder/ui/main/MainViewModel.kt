@@ -34,21 +34,18 @@ class MainViewModel : ViewModel() {
     private val _infoTavolo = MutableStateFlow<Pair<String, String>?>(null)
     val infoTavolo: StateFlow<Pair<String, String>?> = _infoTavolo.asStateFlow()
 
-    // Coordinate del tavolo, passate al PingService per il controllo di allontanamento
     var tavoloLat: Double? = null
         private set
     var tavoloLng: Double? = null
         private set
 
     init {
-        // Aggiorna (edificio, quota) ogni volta che cambia il tavolo occupato
         viewModelScope.launch {
             tavoloAttuale.collectLatest { id ->
                 _infoTavolo.value = id?.let { EdificioRepository.getInfoTavolo(it) }
             }
         }
 
-        // Stato iniziale: tavolo già occupato + edifici/piani
         viewModelScope.launch {
             TavoloRepository.setTavolo(TavoloRepository.getTavoloUtente(SessionManager.userId))
             caricaEdifici()
@@ -65,13 +62,20 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun logout(onDone: () -> Unit) {
+        viewModelScope.launch {
+            tavoloAttuale.value?.let { id -> TavoloRepository.liberaTavolo(id) }
+            TavoloRepository.setTavolo(null)
+            onDone()
+        }
+    }
+
     private suspend fun caricaPiani(edificio: Edificio) {
         val piani = EdificioRepository.getPiani(edificio.id)
         _selezione.update { attuale ->
             MapSelezione(
                 edificio = edificio,
                 piani = piani,
-                // Se l'edificio non ha piani resta la quota precedente (come prima)
                 quota = piani.firstOrNull()?.quota ?: attuale.quota
             )
         }
@@ -86,7 +90,6 @@ class MainViewModel : ViewModel() {
     }
 
     fun onTavoloOccupato(idTavolo: Int, lat: Double?, lng: Double?) {
-        // Prima le coordinate, poi il tavolo: chi osserva tavoloAttuale le trova già pronte
         tavoloLat = lat
         tavoloLng = lng
         TavoloRepository.setTavolo(idTavolo)
