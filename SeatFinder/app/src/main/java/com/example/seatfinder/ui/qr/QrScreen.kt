@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -14,6 +15,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,8 +26,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.seatfinder.auth.SessionManager
@@ -38,6 +42,11 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 
 @Composable
 fun QrScreen(
@@ -49,6 +58,8 @@ fun QrScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var isScanned by remember { mutableStateOf(false) }
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var torchOn by remember { mutableStateOf(false) }
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -166,12 +177,13 @@ fun QrScreen(
 
                         try {
                             cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
+                            camera = cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
                                 cameraSelector,
                                 preview,
                                 analysis
                             )
+                            torchOn = false
                             preview.setSurfaceProvider(previewView.surfaceProvider)
                         } catch (e: Exception) {
                             Log.e("QR", "Errore fotocamera", e)
@@ -182,6 +194,35 @@ fun QrScreen(
                     previewView
                 }
             )
+            ScannerOverlay()
+
+            if (camera?.cameraInfo?.hasFlashUnit() == true) {
+                IconButton(
+                    onClick = {
+                        torchOn = !torchOn
+                        camera?.cameraControl?.enableTorch(torchOn)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (torchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
+                        contentDescription = if (torchOn) "Spegni torcia" else "Accendi torcia",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            // 👇 NUOVO: testo sotto il riquadro
+            Text(
+                text = "Inquadra il QR code del tavolo",
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 340.dp)
+            )
+
         } else {
             Text(
                 text = "Serve il permesso per accedere alla fotocamera",
