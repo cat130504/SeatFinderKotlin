@@ -2,12 +2,17 @@ package com.example.seatfinder.data.repository
 
 import android.util.Log
 import com.example.seatfinder.data.remote.SupabaseClient
+import com.example.seatfinder.data.remote.dto.OccupazioneUtenteDto
 import com.example.seatfinder.data.remote.dto.StatsFlussoRow
+import com.example.seatfinder.domain.model.OccupazioneUtente
 import com.example.seatfinder.domain.model.StatoPiano
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.seatfinder.data.remote.dto.toDomain
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 
 object StatsRepository {
 
@@ -26,6 +31,23 @@ object StatsRepository {
             emptyList()
         }
     }
+
+    suspend fun getOccupazioniUtente(userId: Int): List<OccupazioneUtente> =
+        withContext(Dispatchers.IO) {
+            SupabaseClient.client.postgrest
+                .from("occupazione")   // ← verifica il nome reale della tabella
+                .select(
+                    Columns.raw(
+                        "id_tavolo, data_occupazione, lat_occupazione, lng_occupazione, " +
+                                "tavolo:id_tavolo(quota, piano(edificio(nome)))"
+                    )
+                ) {
+                    filter { eq("id_utente", userId) }
+                    order("data_occupazione", Order.DESCENDING)
+                }
+                .decodeList<OccupazioneUtenteDto>()
+                .map { it.toDomain() }
+        }
 
     suspend fun getStatoAttualePerPiano(): List<StatoPiano> {
         return try {

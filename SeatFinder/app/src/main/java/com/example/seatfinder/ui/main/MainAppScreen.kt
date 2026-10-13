@@ -27,6 +27,7 @@ import com.example.seatfinder.ui.map.generaOpzioniEdifici
 import com.example.seatfinder.ui.map.generaOpzioniPiani
 import com.example.seatfinder.ui.navigation.Destination
 import com.example.seatfinder.ui.qr.QrScreen
+import com.example.seatfinder.ui.stats.ProfileStatsScreen
 import com.example.seatfinder.ui.stats.StatsScreen
 import kotlinx.coroutines.launch
 
@@ -119,6 +120,9 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                         quota = selezione.quota
                     )
                 }
+                composable(Destination.PROFILE_STATS.route) {
+                    ProfileStatsScreen()
+                }
                 composable(Destination.STATS.route) {
                     StatsScreen()
                 }
@@ -139,7 +143,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                     PlanBadge(
                         planName = "Edificio: ${selezione.edificio?.nome}   Piano: ${selezione.quota}",
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
+                            .align(Alignment.TopCenter)
                             .padding(16.dp)
                     )
                 }
