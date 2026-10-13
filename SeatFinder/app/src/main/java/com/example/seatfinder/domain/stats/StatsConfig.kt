@@ -3,7 +3,7 @@ package com.example.seatfinder.domain.stats
 object StatsConfig {
     const val GIORNI_STORICO = 30
 
-    val ORE_APERTURA = 8..20
+    val ORE_APERTURA = 8..18
 
     val GIORNI_FERIALI = listOf(1, 2, 3, 4, 5)
 

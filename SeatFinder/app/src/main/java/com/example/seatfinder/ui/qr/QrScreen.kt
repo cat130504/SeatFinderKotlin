@@ -16,6 +16,11 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,11 +47,6 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FlashOff
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 
 @Composable
 fun QrScreen(
@@ -194,8 +194,19 @@ fun QrScreen(
                     previewView
                 }
             )
+
             ScannerOverlay()
 
+            // Testo sotto il riquadro di scansione (boxSize = 260dp → bordo inferiore a center + 130dp)
+            Text(
+                text = "Inquadra il QR code del tavolo",
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(top = 180.dp)
+            )
+
+            // Torcia in basso, indipendente dal testo
             if (camera?.cameraInfo?.hasFlashUnit() == true) {
                 IconButton(
                     onClick = {
@@ -204,7 +215,7 @@ fun QrScreen(
                     },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 48.dp)
+                        .padding(bottom = 40.dp)
                 ) {
                     Icon(
                         imageVector = if (torchOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
@@ -213,15 +224,6 @@ fun QrScreen(
                     )
                 }
             }
-
-            // 👇 NUOVO: testo sotto il riquadro
-            Text(
-                text = "Inquadra il QR code del tavolo",
-                color = Color.White,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(top = 340.dp)
-            )
 
         } else {
             Text(

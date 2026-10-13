@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
 
 
 object TavoloRepository {
@@ -80,7 +82,7 @@ object TavoloRepository {
                     OccupazioneInsert(
                         id_utente = idUtente,
                         id_tavolo = idTavolo,
-                        data_occupazione = Clock.System.now().toString(),
+                        data_occupazione = OffsetDateTime.now(ZoneId.systemDefault()).toString(),
                         lat_occupazione = lat,
                         lng_occupazione = lng
                     )
@@ -115,8 +117,7 @@ object TavoloRepository {
                 val idOccupazione = occupazioneAperta.first().id
 
                 SupabaseClient.client.from("occupazione").update({
-                    set("data_liberazione", Clock.System.now().toString())
-                }) {
+                    set("data_liberazione", OffsetDateTime.now(ZoneId.systemDefault()).toString())                }) {
                     filter { eq("id", idOccupazione) }
                 }
 
