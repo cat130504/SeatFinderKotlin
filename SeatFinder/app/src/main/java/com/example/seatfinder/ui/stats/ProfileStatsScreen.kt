@@ -1,26 +1,35 @@
 package com.example.seatfinder.ui.stats
 
-
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,11 +38,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.seatfinder.domain.model.OccupazioneUtente
 import com.example.seatfinder.domain.stats.StatsConfig
 import com.example.seatfinder.domain.stats.giorniDaOggi
-import com.example.seatfinder.ui.stats.*
-import kotlinx.coroutines.flow.*
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun ProfileStatsScreen(
@@ -142,7 +151,7 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Quando occupi i tavoli", style = MaterialTheme.typography.titleMedium)
+            Text("Le tue fasce di occupazione", style = MaterialTheme.typography.titleMedium)
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -169,7 +178,9 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                         )
                         ordine.forEach { dow ->
                             val n = mappa[dow to h] ?: 0
-                            // celle senza occupazioni neutre, le altre colorate in scala
+
+                            // Celle senza occupazioni: neutro visibile + bordo sottile
+                            // Celle con occupazioni: scala cromatica, senza bordo
                             val colore = if (n == 0) COL_VUOTA.copy(alpha = 0.35f)
                             else coloreOccupazione(n.toFloat() / maxN)
 
@@ -181,7 +192,8 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                                     .background(colore, RoundedCornerShape(3.dp))
                                     .border(
                                         width = 0.5.dp,
-                                        color = if (n == 0) COL_VUOTA.copy(alpha = 0.7f) else Color.Transparent,
+                                        color = if (n == 0) COL_VUOTA.copy(alpha = 0.7f)
+                                        else Color.Transparent,
                                         shape = RoundedCornerShape(3.dp)
                                     )
                             )
@@ -189,11 +201,56 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                     }
                 }
             }
-            Text(
-                "Il colore indica quante volte hai occupato un tavolo in quella fascia",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+
+            LegendaHeatmapProfilo()
+        }
+    }
+}
+
+@Composable
+private fun LegendaHeatmapProfilo() {
+    Column(
+        Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text("Scala occupazioni", style = MaterialTheme.typography.labelSmall)
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            // Cella grigia = nessuna occupazione (stessa resa delle celle vuote della griglia)
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .background(COL_VUOTA.copy(alpha = 0.35f), RoundedCornerShape(2.dp))
+                    .border(
+                        width = 0.5.dp,
+                        color = COL_VUOTA.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(2.dp)
+                    )
             )
+            // Gradiente continuo (stessa scala usata nelle celle della heatmap)
+            (0..10).forEach { i ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(coloreOccupazione(i / 10f), RoundedCornerShape(2.dp))
+                )
+            }
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Nessuna", style = MaterialTheme.typography.labelSmall)
+            Text("Poche", style = MaterialTheme.typography.labelSmall)
+            Text("Molte", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -240,11 +297,10 @@ private fun SezioneLuoghi(occ: List<OccupazioneUtente>) {
     }
 }
 
-// ---------- 4. Ultime occupazioni con posizione ----------
+// ---------- 4. Ultime occupazioni ----------
 
 @Composable
 private fun SezioneUltime(occ: List<OccupazioneUtente>) {
-    val context = LocalContext.current
     val formato = remember { SimpleDateFormat("dd/MM · HH:mm", Locale.ITALY) }
     val ultime = remember(occ) { occ.sortedByDescending { it.inizio }.take(10) }
 
