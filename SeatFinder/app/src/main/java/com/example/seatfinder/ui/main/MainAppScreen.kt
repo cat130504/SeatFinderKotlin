@@ -3,6 +3,7 @@ package com.example.seatfinder.ui.main
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +30,6 @@ import com.example.seatfinder.ui.navigation.Destination
 import com.example.seatfinder.ui.qr.QrScreen
 import com.example.seatfinder.ui.stats.ProfileStatsScreen
 import com.example.seatfinder.ui.stats.StatsScreen
-import kotlinx.coroutines.launch
 
 @Composable
 fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
@@ -40,6 +40,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
     val infoTavolo by viewModel.infoTavolo.collectAsState()
     val edifici by viewModel.edifici.collectAsState()
     val selezione by viewModel.selezione.collectAsState()
+    val ready by viewModel.ready.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -79,6 +80,14 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         )
     }
 
+    // ---- GATE GLOBALE: aspetta il caricamento iniziale ----
+    if (!ready) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -115,10 +124,19 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 composable(Destination.MAP.route) {
-                    MapScreen(
-                        drawableRes = mapDrawable,
-                        quota = selezione.quota
-                    )
+                    // ---- GATE LOCALE: mappa solo con edificio+quota noti ----
+                    val edificio = selezione.edificio
+                    val quota = selezione.quota
+                    if (edificio != null && quota != null) {
+                        MapScreen(
+                            drawableRes = mapDrawable,
+                            quota = quota
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
                 composable(Destination.PROFILE_STATS.route) {
                     ProfileStatsScreen()
@@ -139,9 +157,13 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
             }
 
             if (currentRoute == Destination.MAP.route) {
-                selezione.let { quota ->
+                val edificio = selezione.edificio
+                val quota = selezione.quota
+
+                // PlanBadge solo se abbiamo davvero edificio+quota
+                if (edificio != null && quota != null) {
                     PlanBadge(
-                        planName = "Edificio: ${selezione.edificio?.nome}   Piano: ${selezione.quota}",
+                        planName = "Edificio: ${edificio.nome}   Piano: $quota",
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(16.dp)

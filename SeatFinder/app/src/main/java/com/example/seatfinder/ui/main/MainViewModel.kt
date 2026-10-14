@@ -34,6 +34,10 @@ class MainViewModel : ViewModel() {
     private val _infoTavolo = MutableStateFlow<Pair<String, String>?>(null)
     val infoTavolo: StateFlow<Pair<String, String>?> = _infoTavolo.asStateFlow()
 
+    // true quando il caricamento iniziale (tavolo utente + edifici + piani) è concluso
+    private val _ready = MutableStateFlow(false)
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+
     var tavoloLat: Double? = null
         private set
     var tavoloLng: Double? = null
@@ -47,8 +51,15 @@ class MainViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            TavoloRepository.setTavolo(TavoloRepository.getTavoloUtente(SessionManager.userId))
-            caricaEdifici()
+            try {
+                TavoloRepository.setTavolo(
+                    TavoloRepository.getTavoloUtente(SessionManager.userId)
+                )
+                caricaEdifici()
+            } finally {
+                // qualunque cosa accada, sblocchiamo l'UI
+                _ready.value = true
+            }
         }
     }
 

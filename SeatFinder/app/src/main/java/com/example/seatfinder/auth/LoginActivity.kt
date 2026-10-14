@@ -15,14 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -42,12 +43,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.seatfinder.MainActivity
 import com.example.seatfinder.R
+import com.example.seatfinder.ui.theme.SeatFinderTheme
 import kotlinx.coroutines.launch
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.ui.platform.LocalConfiguration
 
 class LoginActivity : ComponentActivity() {
 
@@ -64,15 +61,7 @@ class LoginActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary        = Color(0xFF0A5B95),
-                    onPrimary      = Color.White,
-                    primaryContainer = Color(0xFF0A5B95),
-                    onPrimaryContainer = Color.White,
-                    secondary      = Color(0xFF0A5B95),
-                )
-            ) {
+            SeatFinderTheme {
                 LoginScreen(onLoginSuccess = { goToMain() })
             }
         }
@@ -185,10 +174,6 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                     }
                 },
                 enabled = canLogin,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0A5B95),
-                    contentColor = Color.White
-                ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -199,7 +184,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
 
             if (loading) {
                 Spacer(Modifier.height(16.dp))
-                CircularProgressIndicator(color = Color(0xFF0A5B95))
+                CircularProgressIndicator()
             }
 
             Spacer(Modifier.height(32.dp)) // margine in fondo per lo scroll

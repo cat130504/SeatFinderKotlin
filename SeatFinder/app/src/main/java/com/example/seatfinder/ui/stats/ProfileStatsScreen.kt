@@ -11,6 +11,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -169,14 +170,20 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                         ordine.forEach { dow ->
                             val n = mappa[dow to h] ?: 0
                             // celle senza occupazioni neutre, le altre colorate in scala
-                            val colore = if (n == 0) MaterialTheme.colorScheme.surfaceVariant
+                            val colore = if (n == 0) COL_VUOTA.copy(alpha = 0.35f)
                             else coloreOccupazione(n.toFloat() / maxN)
+
                             Box(
                                 Modifier
                                     .weight(1f)
                                     .height(18.dp)
                                     .padding(1.dp)
                                     .background(colore, RoundedCornerShape(3.dp))
+                                    .border(
+                                        width = 0.5.dp,
+                                        color = if (n == 0) COL_VUOTA.copy(alpha = 0.7f) else Color.Transparent,
+                                        shape = RoundedCornerShape(3.dp)
+                                    )
                             )
                         }
                     }

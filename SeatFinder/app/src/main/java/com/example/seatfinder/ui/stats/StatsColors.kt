@@ -11,6 +11,9 @@ internal val COL_ALTA   = Color(0xFFFF9800)   // arancio
 internal val COL_PIENA  = Color(0xFFE53935)   // rosso
 internal val COL_ADESSO = Color(0xFF1976D2)   // blu "adesso"/oggi
 
+internal val COL_VUOTA = Color(0xFFB8BEC9)
+
+
 internal fun coloreOccupazione(v: Float): Color {
     val x = v.coerceIn(0f, 1f)
     return when {
