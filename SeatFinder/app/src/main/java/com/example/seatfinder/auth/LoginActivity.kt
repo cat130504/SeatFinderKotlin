@@ -44,6 +44,10 @@ import com.example.seatfinder.MainActivity
 import com.example.seatfinder.R
 import kotlinx.coroutines.launch
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.platform.LocalConfiguration
 
 class LoginActivity : ComponentActivity() {
 
@@ -91,9 +95,18 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
 
     val canLogin = matricola.isNotBlank() && password.isNotBlank() && !loading
 
+    // Altezza schermo: NON cambia quando appare la tastiera
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        disabledContainerColor = Color.White
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Sfondo a tutto schermo
+        // Sfondo fisso
         Image(
             painter = painterResource(id = R.drawable.login),
             contentDescription = null,
@@ -101,17 +114,16 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // Contenuto: due Spacer con weight spingono il blocco nella zona bianca
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Spazio sopra: regola il valore per alzare/abbassare il blocco
-            Spacer(Modifier.weight(0.60f))
+            // Posizione fissa: porta i campi nella zona bianca (regola 0.46f a gusto)
+            Spacer(Modifier.height(screenHeight * 0.46f))
 
             OutlinedTextField(
                 value = matricola,
@@ -119,6 +131,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                 label = { Text("Matricola") },
                 singleLine = true,
                 enabled = !loading,
+                colors = fieldColors,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -130,6 +143,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                 label = { Text("Password") },
                 singleLine = true,
                 enabled = !loading,
+                colors = fieldColors,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
@@ -188,8 +202,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                 CircularProgressIndicator(color = Color(0xFF0A5B95))
             }
 
-            // Spazio sotto
-            Spacer(Modifier.weight(0.40f))
+            Spacer(Modifier.height(32.dp)) // margine in fondo per lo scroll
         }
     }
 }
