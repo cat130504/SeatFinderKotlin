@@ -1,6 +1,6 @@
 package com.example.seatfinder.ui.main
 
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +18,7 @@ fun AppBottomBar(
     scanEnabled: Boolean,
     onDestinationClick: (Destination) -> Unit
 ) {
-    androidx.compose.foundation.layout.Column {
+    Column {
         HorizontalDivider(
             thickness = 1.dp,
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -26,8 +26,7 @@ fun AppBottomBar(
 
         NavigationBar(
             containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 0.dp,
-            windowInsets = WindowInsets(0, 0, 0, 0)
+            tonalElevation = 0.dp
         ) {
             Destination.entries.forEach { destination ->
                 val isEnabled = if (destination == Destination.QR) scanEnabled else true
@@ -45,16 +44,11 @@ fun AppBottomBar(
                     },
                     label = { Text(destination.label) },
                     colors = NavigationBarItemDefaults.colors(
-                        // Item selezionato: pillola azzurra + icona blu scuro + label blu brand
                         selectedIconColor   = MaterialTheme.colorScheme.onSecondaryContainer,
                         selectedTextColor   = MaterialTheme.colorScheme.primary,
                         indicatorColor      = MaterialTheme.colorScheme.secondaryContainer,
-
-                        // Item non selezionato: grigio neutro
                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-
-                        // Item disabilitato (es. Scansione mentre hai un tavolo attivo)
                         disabledIconColor   = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                         disabledTextColor   = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                     )
