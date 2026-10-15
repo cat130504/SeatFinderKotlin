@@ -228,7 +228,7 @@ class InteractiveMapView(context: Context, attrs: AttributeSet? = null) : View(c
         val coords = floatArrayOf(touchX, touchY)
         inverse.mapPoints(coords)
 
-        val touchRadius = (bWidth * ICON_WIDTH_PERCENT) * 0.20f
+        val touchRadius = (bWidth * ICON_WIDTH_PERCENT) * 0.30f
         for (tavolo in listaTavoli) {
             val tavoloPixelX = (tavolo.x / 100f) * bWidth
             val tavoloPixelY = (tavolo.y / 100f) * bHeight
