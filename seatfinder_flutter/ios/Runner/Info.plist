@@ -26,6 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Serve la fotocamera per scansionare il QR code del tavolo.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Serve la posizione anche in background per liberare il tavolo se ti allontani.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Serve la posizione anche in background per liberare il tavolo se ti allontani.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Serve la posizione per verificare che tu sia vicino al tavolo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -49,6 +57,11 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -65,19 +78,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>Serve la fotocamera per scansionare il QR code del tavolo.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Serve la posizione per verificare che tu sia vicino al tavolo.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Serve la posizione anche in background per liberare il tavolo se ti allontani.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Serve la posizione anche in background per liberare il tavolo se ti allontani.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-		<string>fetch</string>
 	</array>
 </dict>
 </plist>
