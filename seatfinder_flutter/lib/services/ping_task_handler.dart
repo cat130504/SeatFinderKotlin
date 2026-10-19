@@ -65,9 +65,15 @@ class PingTaskHandler extends TaskHandler {
 
     try {
       await _notif.initialize(
-          settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      ));
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          iOS: DarwinInitializationSettings(
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          ),
+        ),
+      );
     } catch (e) {
       debugPrint('Init notifiche nel servizio fallita: $e');
     }
@@ -125,24 +131,34 @@ class PingTaskHandler extends TaskHandler {
       debugPrint('DEBUG_LOC Distanza dal tavolo: $distanza metri');
 
       if (distanza > PingConfig.distanzaMassimaMetri) {
-        _avviaProceduraAllontanamento();
+        await _avviaProceduraAllontanamento();
       }
     } catch (e) {
       debugPrint('Errore controllo posizione: $e');
     }
   }
 
-  void _avviaProceduraAllontanamento() {
-    _notificaInCorso = true;
-    _scadenzaRisposta = DateTime.now().add(PingConfig.timeoutRispostaAllontanamento);
 
-    FlutterForegroundTask.updateService(
+  Future<void> _avviaProceduraAllontanamento() async {
+    if (_notificaInCorso || _chiusura) return;
+
+    _notificaInCorso = true;
+    _scadenzaRisposta =
+        DateTime.now().add(PingConfig.timeoutRispostaAllontanamento);
+
+    await FlutterForegroundTask.updateService(
       notificationTitle: 'Ti sei allontanato dal tavolo!',
       notificationText:
-          'Vuoi mantenere il posto? Verrà liberato tra 10 minuti se non rispondi.',
+      'Vuoi mantenere il posto? Verrà liberato tra 10 minuti se non rispondi.',
       notificationButtons: const [
-        NotificationButton(id: PingConfig.btnMantieni, text: 'Mantieni (+10 min)'),
-        NotificationButton(id: PingConfig.btnLibera, text: 'Libera'),
+        NotificationButton(
+          id: PingConfig.btnMantieni,
+          text: 'Mantieni (+10 min)',
+        ),
+        NotificationButton(
+          id: PingConfig.btnLibera,
+          text: 'Libera',
+        ),
       ],
     );
   }
@@ -192,8 +208,13 @@ class PingTaskHandler extends TaskHandler {
           android: AndroidNotificationDetails(
             'tavolo_liberato_channel',
             'Tavolo liberato',
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBanner: true,
+            presentSound: true,
           ),
         ),
       );
@@ -220,6 +241,7 @@ class PingTaskHandler extends TaskHandler {
   }
 
   @override
-  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}}
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
+}
 
 enum PingMotivo { allontanamento, appChiusa, manuale }

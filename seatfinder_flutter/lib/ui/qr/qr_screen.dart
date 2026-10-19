@@ -102,17 +102,25 @@ class _QrScreenState extends State<QrScreen> {
     double? lng;
     if (_hasLocation) {
       try {
-        final pos = await Geolocator.getLastKnownPosition() ??
-            await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.high,
-                timeLimit: Duration(seconds: 10),
-              ),
-            );
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 8),
+          ),
+        );
         lat = pos.latitude;
         lng = pos.longitude;
       } catch (e) {
-        debugPrint('QR Impossibile ottenere la posizione: $e');
+        debugPrint('QR getCurrentPosition fallita ($e), provo getLastKnownPosition...');
+        try {
+          final lastPos = await Geolocator.getLastKnownPosition();
+          if (lastPos != null) {
+            lat = lastPos.latitude;
+            lng = lastPos.longitude;
+          }
+        } catch (e2) {
+          debugPrint('QR Impossibile ottenere alcuna posizione: $e2');
+        }
       }
     }
 

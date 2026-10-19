@@ -1,28 +1,56 @@
 import 'dart:io';
 
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:geolocator/geolocator.dart';
 
 Future<void>? _inFlight;
 
-/// Equivalente di MainActivity.richiediPermessi():
-/// notifiche (Android 13+), posizione precisa, poi posizione in background.
-///
-/// Eseguita una sola volta e condivisa: PingService.start() ne attende il
-/// completamento, così il foreground service di tipo "location" non parte
-/// prima che il permesso sia stato concesso (su Android 14+ sarebbe un crash).
-Future<void> richiediPermessiIniziali() => _inFlight ??= _richiedi();
+/// Richiede permessi di Notifica (Android 13+ e iOS) e Posizione.
+/// Non rimane bloccata se l'utente nega al primo avvio: resetta _inFlight a fine esecuzione.
+Future<void> richiediPermessiIniziali() {
+  return _inFlight ??= _richiedi().whenComplete(() => _inFlight = null);
+}
 
 Future<void> _richiedi() async {
-  if (Platform.isAndroid) {
-    final notif = await Permission.notification.status;
-    if (!notif.isGranted) await Permission.notification.request();
+  // 1. Permesso Notifiche (Android 13+ e iOS)
+  try {
+    final notifPlugin = FlutterLocalNotificationsPlugin();
+    if (Platform.isAndroid) {
+      await notifPlugin
+          .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    } else if (Platform.isIOS) {
+      await notifPlugin
+          .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+    }
+  } catch (e) {
+    debugPrint('Errore richiesta permesso notifiche: $e');
   }
 
-  var loc = await Permission.location.status;
-  if (!loc.isGranted) loc = await Permission.location.request();
+  // 2. Permesso Posizione tramite Geolocator (funziona su iOS e Android senza Podfile custom)
+  try {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('Servizi di localizzazione disattivati sul dispositivo.');
+      return;
+    }
 
-  if (loc.isGranted) {
-    final always = await Permission.locationAlways.status;
-    if (!always.isGranted) await Permission.locationAlways.request();
+    var perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+  } catch (e) {
+    debugPrint('Errore richiesta permesso posizione: $e');
   }
+}
+
+/// Helper comodo per verificare se abbiamo almeno il permesso WhenInUse o Always
+Future<bool> haPermessoPosizione() async {
+  final perm = await Geolocator.checkPermission();
+  return perm == LocationPermission.whileInUse ||
+      perm == LocationPermission.always;
 }

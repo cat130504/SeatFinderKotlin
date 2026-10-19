@@ -1,5 +1,4 @@
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../core/config.dart';
 import 'permissions.dart';
@@ -9,15 +8,18 @@ import 'ping_task_handler.dart';
 class PingService {
   static void init() {
     FlutterForegroundTask.init(
+
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: PingConfig.channelId,
         channelName: 'Stato Tavolo',
-        channelDescription: 'Mantiene attiva l\'occupazione del tavolo',
-        channelImportance: NotificationChannelImportance.LOW,
-        priority: NotificationPriority.LOW,
+        channelDescription:
+        'Avvisi di occupazione e allontanamento dal tavolo',
+        channelImportance: NotificationChannelImportance.HIGH,
+        priority: NotificationPriority.HIGH,
+        onlyAlertOnce: false,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
-        showNotification: false,
+        showNotification: true,
         playSound: false,
       ),
       foregroundTaskOptions: ForegroundTaskOptions(
@@ -39,14 +41,8 @@ class PingService {
     // 1. Richiede i permessi iniziali (Posizione + Notifiche)
     await richiediPermessiIniziali();
 
-    // 2. Verifica che i permessi essenziali siano stati concessi prima di partire
-    if (!await Permission.location.isGranted) return;
-
-    // Su Android 13+ e iOS, richiediamo anche che le notifiche siano permesse
-    // per evitare che il sistema termini o nasconda il foreground service.
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
-    }
+    // 2. Verifica tramite Geolocator che il permesso posizione sia concesso
+    if (!await haPermessoPosizione()) return;
 
     // Dati letti dall'isolate del servizio in onStart()
     await FlutterForegroundTask.saveData(key: 'sb_url', value: AppConfig.supabaseUrl);
