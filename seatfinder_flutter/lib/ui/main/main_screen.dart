@@ -14,7 +14,7 @@ import 'app_top_bar.dart';
 import 'main_controller.dart';
 import 'profile_dialog.dart';
 
-/// Le 4 destinazioni della bottom bar (Destination.kt).
+//enum che definisce le 4 destinazioni della barra di navigazione inferiore
 enum Destination {
   map('Mappa', Icons.map),
   stats('Statistiche', Icons.query_stats),
@@ -25,7 +25,7 @@ enum Destination {
   final String label;
   final IconData icon;
 }
-
+//schermata principale dell'applicazione che gestisce la navigazione tra le tab tramite BottomNavigationBar
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -33,17 +33,21 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
+//Traccia la tab attualmente selezionata (inizializzata sulla Mappa)
 class _MainScreenState extends State<MainScreen> {
   Destination _current = Destination.map;
 
   @override
   void initState() {
     super.initState();
+
+    //richiede i permessi necessari per il funzionamento dell'applicazione
     richiediPermessiIniziali();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Ascolta i cambiamenti nel MainController tramite Provider
     final c = context.watch<MainController>();
     final session = SessionManager.instance;
 
@@ -52,10 +56,12 @@ class _MainScreenState extends State<MainScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    //abilita il qr in base allo stato dell'occupazione di un tavolo
     final scanEnabled = c.tavoloAttuale == null;
     // Se un tavolo diventa occupato mentre siamo sulla tab QR, torna alla mappa
     final current = (_current == Destination.qr && !scanEnabled) ? Destination.map : _current;
 
+    //barra superiore con informaizoni su utente e tavolo
     return Scaffold(
       appBar: AppTopBar(
         iniziali: session.iniziali,
@@ -68,6 +74,7 @@ class _MainScreenState extends State<MainScreen> {
         ),
         onLiberaClick: c.liberaTavolo,
       ),
+      //barra di navigazione inferiore (bottomNavigationBar) con separatore grafico
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -89,12 +96,14 @@ class _MainScreenState extends State<MainScreen> {
                   icon: Icon(d.icon),
                   label: d.label,
                   tooltip: d.label,
+                  //disabilita la tab QR se l'utente ha già un tavolo occupato
                   enabled: d == Destination.qr ? scanEnabled : true,
                 ),
             ],
           ),
         ],
       ),
+      //corpo dinamico della schermata basato sulla tab attualmente selezionata
       body: switch (current) {
         Destination.map => _MapTab(controller: c),
         Destination.stats => const StatsScreen(),
@@ -110,6 +119,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
+//widget privato che gestisce la visualizzazione della tab della Mappa e dei menu fluttuanti associati
 class _MapTab extends StatelessWidget {
   const _MapTab({required this.controller});
   final MainController controller;
@@ -142,6 +152,7 @@ class _MapTab extends StatelessWidget {
             },
           ),
         ),
+        //testo superiore che mostra il nome dell'edificio e il piano corrente
         Align(
           alignment: Alignment.topCenter,
           child: Padding(
@@ -149,6 +160,7 @@ class _MapTab extends StatelessWidget {
             child: PlanBadge(planName: 'Edificio: ${edificio.nome}   Piano: $quota'),
           ),
         ),
+        //menu a comparsa in basso a destra e sinistra per la selezione della quota e dell'edificio
         if (sel.piani.isNotEmpty)
           Align(
             alignment: Alignment.bottomRight,

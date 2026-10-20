@@ -7,10 +7,12 @@ import '../domain/models.dart';
 /// A differenza di Kotlin (object singleton + SessionManager.userId) qui
 /// il client e lo userId vengono passati: così funziona anche nell'isolate
 /// del servizio in background.
+// repository per la gestione delle operazioni di database relative ai tavoli e alle occupazioni degli utenti
 class TavoloRepository {
   TavoloRepository(this._db);
   final SupabaseClient _db;
 
+  // recupera la lista di tutti i tavoli registrati, filtrandoli opzionalmente per quota o piano specifico
   Future<List<Tavolo>> getTavoli([String? quota]) async {
     try {
       final q = _db.from('tavolo').select();
@@ -22,9 +24,10 @@ class TavoloRepository {
     }
   }
 
-  /// Ritorna true se l'occupazione è stata registrata.
-  /// (In Kotlin l'errore veniva solo loggato e il chiamante mostrava comunque
-  /// "Tavolo occupato"; qui l'esito è esplicito.)
+  //Ritorna true se l'occupazione è stata registrata.
+  //(In Kotlin l'errore veniva solo loggato e il chiamante mostrava comunque
+  //"Tavolo occupato"; qui l'esito è esplicito.)
+  // registra l'occupazione di un tavolo aggiornando lo stato, decrementando i posti liberi e salvando il record sul database
   Future<bool> occupaTavolo(int idTavolo, int idUtente,
       {double? lat, double? lng}) async {
     try {
@@ -47,6 +50,7 @@ class TavoloRepository {
     }
   }
 
+  // libera un tavolo occupato registrando la data di chiusura dell'occupazione, incrementando i posti e resettando lo stato se vuoto
   Future<bool> liberaTavolo(int idTavolo, int idUtente) async {
     try {
       debugPrint('Provo a liberare tavolo id=$idTavolo per utente=$idUtente');
@@ -85,7 +89,8 @@ class TavoloRepository {
     }
   }
 
-  /// Id del tavolo attualmente occupato dall'utente, o null.
+  //id del tavolo attualmente occupato dall'utente, o null.
+  // individua e restituisce l'identificativo del tavolo attualmente occupato da un utente, se esiste una sessione attiva
   Future<int?> getTavoloUtente(int idUtente) async {
     try {
       final rows = await _db
@@ -101,6 +106,7 @@ class TavoloRepository {
     }
   }
 
+  // restituisce il numero di posti ancora disponibili per un determinato tavolo identificato dal suo id
   Future<int> getPostiLiberi(int id) async {
     try {
       final rows = await _db.from('tavolo').select().eq('id', id);

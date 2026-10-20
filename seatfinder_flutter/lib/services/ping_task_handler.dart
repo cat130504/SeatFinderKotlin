@@ -8,7 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import '../core/supabase_client.dart';
 import '../data/tavolo_repository.dart';
 
-/// Costanti (stesse del PingService Kotlin).
+//Costanti (stesse del PingService Kotlin).
+// classe di configurazione statica contenente i parametri e le soglie per il servizio di monitoraggio in background
 class PingConfig {
   static const channelId = 'ping_tavolo_channel';
   static const distanzaMassimaMetri = 50.0;
@@ -16,9 +17,9 @@ class PingConfig {
   static const timeoutRispostaAllontanamento = Duration(minutes: 10);
   static const durataProroga = Duration(minutes: 10);
 
-  /// Sostituisce onTaskRemoved (SECONDI_GRAZIA = 15 s): la UI invia un
-  /// "heartbeat" ogni 5 s; se non ne arrivano più per questo tempo l'app
-  /// è considerata chiusa e il tavolo viene liberato.
+  //Sostituisce onTaskRemoved (SECONDI_GRAZIA = 15 s): la UI invia un
+  //"heartbeat" ogni 5 s; se non ne arrivano più per questo tempo l'app
+  //è considerata chiusa e il tavolo viene liberato.
   static const timeoutAppChiusa = Duration(seconds: 45);
 
   static const btnMantieni = 'mantieni';
@@ -26,11 +27,13 @@ class PingConfig {
 }
 
 @pragma('vm:entry-point')
+// funzione entry-point globale registrata per avviare il task handler del servizio in primo piano all'interno dell'isolate
 void startPingCallback() {
   FlutterForegroundTask.setTaskHandler(PingTaskHandler());
 }
 
-/// Gira in un isolate separato, dentro il foreground service Android.
+//Gira in un isolate separato, dentro il foreground service Android.
+//gestore del task in background che esegue controlli periodici sulla posizione e gestisce i timeout di allontanamento
 class PingTaskHandler extends TaskHandler {
   TavoloRepository? _repo;
   int? _idTavolo;
@@ -50,6 +53,7 @@ class PingTaskHandler extends TaskHandler {
   final FlutterLocalNotificationsPlugin _notif = FlutterLocalNotificationsPlugin();
 
   @override
+  // metodo eseguito all'avvio del task in background per inizializzare le configurazioni, i client e le notifiche locali
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     final url = await FlutterForegroundTask.getData<String>(key: 'sb_url');
     final key = await FlutterForegroundTask.getData<String>(key: 'sb_key');
@@ -80,10 +84,12 @@ class PingTaskHandler extends TaskHandler {
   }
 
   @override
+  // metodo richiamato ripetutamente a intervalli regolari per eseguire la logica di controllo periodica
   void onRepeatEvent(DateTime timestamp) {
     unawaited(_tick());
   }
 
+  // gestisce il ciclo di controllo periodico verificando lo stato dell'app, i timeout e la distanza geografica
   Future<void> _tick() async {
     if (_tickInCorso || _chiusura) return;
     _tickInCorso = true;
@@ -114,6 +120,7 @@ class PingTaskHandler extends TaskHandler {
     }
   }
 
+  // rileva la posizione GPS corrente e verifica se la distanza dal tavolo supera la soglia massima consentita
   Future<void> _controllaDistanza() async {
     final latAncora = _lat;
     final lngAncora = _lng;
@@ -139,6 +146,7 @@ class PingTaskHandler extends TaskHandler {
   }
 
 
+  // avvia la procedura di allontanamento aggiornando la notifica in primo piano con i pulsanti interattivi di scelta
   Future<void> _avviaProceduraAllontanamento() async {
     if (_notificaInCorso || _chiusura) return;
 
@@ -163,6 +171,7 @@ class PingTaskHandler extends TaskHandler {
     );
   }
 
+  // proroga la prenotazione del tavolo mettendo in pausa i controlli di distanza per il tempo stabilito
   void _mantieni() {
     debugPrint('DEBUG_LOC Mantieni: pausa controlli per 10 minuti');
     _scadenzaRisposta = null;
@@ -172,6 +181,7 @@ class PingTaskHandler extends TaskHandler {
     _ripristinaNotificaNormale();
   }
 
+  // ripristina la notifica in primo piano standard rimuovendo i pulsanti di interazione
   void _ripristinaNotificaNormale() {
     FlutterForegroundTask.updateService(
       notificationTitle: 'Tavolo occupato',
@@ -180,6 +190,7 @@ class PingTaskHandler extends TaskHandler {
     );
   }
 
+  // libera il tavolo sul database, invia il messaggio di aggiornamento all'app principale e arresta il servizio
   Future<void> _libera(PingMotivo motivo) async {
     if (_chiusura) return;
     _chiusura = true;
@@ -193,6 +204,7 @@ class PingTaskHandler extends TaskHandler {
     await FlutterForegroundTask.stopService();
   }
 
+  // mostra una notifica locale di sistema per informare l'utente che il tavolo è stato liberato a causa di un evento
   Future<void> _mostraNotificaLiberato(PingMotivo motivo) async {
     final msg = motivo == PingMotivo.allontanamento
         ? 'Ti sei allontanato, il tavolo è stato liberato.'
@@ -224,6 +236,7 @@ class PingTaskHandler extends TaskHandler {
   }
 
   @override
+  // riceve i dati inviati dal thread principale, aggiornando il timestamp dell'ultimo segnale di vita (heartbeat) ricevuto
   void onReceiveData(Object data) {
     if (data == 'heartbeat') {
       _ultimoHeartbeat = DateTime.now();
@@ -231,6 +244,7 @@ class PingTaskHandler extends TaskHandler {
   }
 
   @override
+  // gestisce la pressione dei pulsanti interattivi presenti all'interno della notifica del servizio in primo piano
   void onNotificationButtonPressed(String id) {
     if (id == PingConfig.btnMantieni) {
       _mantieni();
@@ -241,7 +255,9 @@ class PingTaskHandler extends TaskHandler {
   }
 
   @override
+  // metodo richiamato alla distruzione del task in background per il rilascio delle risorse
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
 }
 
+// enumerativo che elenca i possibili motivi per cui un tavolo viene liberato dal servizio automatico
 enum PingMotivo { allontanamento, appChiusa, manuale }

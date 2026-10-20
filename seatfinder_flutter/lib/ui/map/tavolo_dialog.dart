@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models.dart';
 
+//dialog per mostrare le caratteristiche di un singolo tavolo, si apre al click su uno di essi
 Future<void> showTavoloDialog(BuildContext context, Tavolo tavolo) {
   return showDialog<void>(
     context: context,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/models.dart';
 import 'stats_colors.dart';
 
+// sezione dedicata alla visualizzazione in tempo reale dello stato di occupazione di edifici e piani
 class SezioneStatoAttuale extends StatelessWidget {
   const SezioneStatoAttuale({
     super.key,
@@ -27,6 +28,7 @@ class SezioneStatoAttuale extends StatelessWidget {
           children: [
             Text('Stato attuale', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
+            // riga di chip filtrabili per selezionare un edificio specifico o visualizzarli tutti
             RigaChip(children: [
               FilterChip(
                 selected: edificioSel == null,
@@ -41,6 +43,7 @@ class SezioneStatoAttuale extends StatelessWidget {
                 ),
             ]),
             const SizedBox(height: 12),
+            // mostra un indicatore circolare di caricamento se la lista dello stato è ancora vuota
             if (stato.isEmpty)
               const SizedBox(
                 height: 60,
@@ -53,6 +56,7 @@ class SezioneStatoAttuale extends StatelessWidget {
                 ),
               )
             else
+            // genera una riga dettagliata per ogni piano appartenente allo stato filtrato
               for (final s in stato)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -65,6 +69,7 @@ class SezioneStatoAttuale extends StatelessWidget {
   }
 }
 
+// componente che rappresenta la singola riga di stato per un determinato piano di un edificio
 class _RigaStatoPiano extends StatelessWidget {
   const _RigaStatoPiano(this.s);
   final StatoPiano s;
@@ -83,7 +88,7 @@ class _RigaStatoPiano extends StatelessWidget {
             Flexible(
               child: Text(
                 '${s.tavoliLiberi}/${s.tavoliTotali} tavoli liberi · '
-                '${s.postiLiberi}/${s.postiTotali} posti',
+                    '${s.postiLiberi}/${s.postiTotali} posti',
                 textAlign: TextAlign.end,
                 style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
@@ -91,6 +96,7 @@ class _RigaStatoPiano extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
+        // barra di progresso dinamica che visualizza la percentuale di occupazione corrente
         BarraProgresso(
           valore: s.disponibilita,
           colore: coloreOccupazione(s.percentualeOccupazione),

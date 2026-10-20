@@ -3,8 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'esse3_auth_api.dart';
 
-/// Unisce SessionManager + AuthManager di Kotlin.
-/// Sessione persistita 7 giorni in SharedPreferences ("LoginPrefs").
+// unisce sessionmanager e authmanager, gestendo la persistenza della sessione per sette giorni tramite le preferenze condivise
 class SessionManager extends ChangeNotifier {
   SessionManager._();
   static final SessionManager instance = SessionManager._();
@@ -18,11 +17,12 @@ class SessionManager extends ChangeNotifier {
   String? nome;
   String? iniziali;
 
-  /// false finché non è finito il tentativo di ripristino della sessione.
+  // false finché non è finito il tentativo di ripristino della sessione.
   bool restored = false;
 
   bool get isLoggedIn => userId != -1;
 
+  // recupera in modo asincrono i dati salvati localmente per ripristinare la sessione utente se non è scaduta
   Future<void> restore() async {
     final p = await SharedPreferences.getInstance();
     final id = p.getInt(_kUserId) ?? -1;
@@ -37,6 +37,7 @@ class SessionManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  // salva persistentemente i dati della nuova sessione utente e aggiorna lo stato interno del gestore
   Future<void> saveSession(UserLogin user) async {
     final p = await SharedPreferences.getInstance();
     await p.setInt(_kUserId, user.id);
@@ -48,8 +49,9 @@ class SessionManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Pulisce sessione e prefs. Lo stop del servizio in background
-  /// è gestito da MainController.logout().
+  //pulisce sessione e prefs. Lo stop del servizio in background
+  //é gestito da MainController.logout().
+  //pulisce completamente le preferenze salvate ed effettua il logout azzerando le variabili di sessione
   Future<void> logout() async {
     final p = await SharedPreferences.getInstance();
     await p.clear();

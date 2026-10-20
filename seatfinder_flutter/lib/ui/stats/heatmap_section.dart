@@ -4,6 +4,7 @@ import '../../domain/models.dart';
 import '../../domain/stats.dart';
 import 'stats_colors.dart';
 
+//sezione principale che mostra la heatmap dell'affluenza settimanale
 class SezioneHeatmap extends StatelessWidget {
   const SezioneHeatmap({
     super.key,
@@ -22,13 +23,16 @@ class SezioneHeatmap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    //ottiene l'ordine dei giorni della settimana partendo da oggi
     final ordine = giorniDaOggi(todayDow);
 
+    //aggrega i dati di affluenza raggruppandoli per giorno e ora
     final aggregata = <(int, int), int>{};
     for (final r in rows) {
       final k = (r.giornoSettimana, r.ora);
       aggregata[k] = (aggregata[k] ?? 0) + r.occupazioniTotali;
     }
+    //trova il valore massimo di occupazione per normalizzare i colori della heatmap
     final maxTot = aggregata.values.fold<int>(1, (m, v) => v > m ? v : m);
 
     return Card(
@@ -40,6 +44,7 @@ class SezioneHeatmap extends StatelessWidget {
             Text('Affluenza settimanale',
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
+            //griglia della heatmap che mostra giorni e fasce orarie
             _HeatmapGrid(
               aggregata: aggregata,
               ordine: ordine,
@@ -50,6 +55,7 @@ class SezioneHeatmap extends StatelessWidget {
               giornoSel: giornoSel,
             ),
             const SizedBox(height: 8),
+            //legenda dei colori della scala di affluenza
             const _Legenda(),
           ],
         ),
@@ -58,6 +64,7 @@ class SezioneHeatmap extends StatelessWidget {
   }
 }
 
+//widget privato per disegnare la griglia tabellare della heatmap
 class _HeatmapGrid extends StatelessWidget {
   const _HeatmapGrid({
     required this.aggregata,
@@ -84,6 +91,7 @@ class _HeatmapGrid extends StatelessWidget {
 
     return Column(
       children: [
+        //intestazione con i nomi dei giorni della settimana
         Row(
           children: [
             const SizedBox(width: 26),
@@ -102,21 +110,24 @@ class _HeatmapGrid extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
+        //righe della griglia corrispondenti alle ore di apertura
         for (final h in StatsConfig.oreApertura)
           Padding(
             padding: const EdgeInsets.only(bottom: 2),
             child: Container(
+              //evidenzia visivamente la riga corrispondente all'ora corrente
               decoration: h == oraCorrente
                   ? BoxDecoration(
-                      color: colAdesso.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(4),
-                    )
+                color: colAdesso.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(4),
+              )
                   : null,
               padding: h == oraCorrente
                   ? const EdgeInsets.symmetric(vertical: 1)
                   : EdgeInsets.zero,
               child: Row(
                 children: [
+                  //etichetta oraria a sinistra
                   SizedBox(
                     width: 26,
                     child: Text(
@@ -127,6 +138,7 @@ class _HeatmapGrid extends StatelessWidget {
                       ),
                     ),
                   ),
+                  //celle della heatmap per ciascun giorno della riga oraria corrente
                   for (final dow in ordine)
                     Expanded(
                       child: _Cella(
@@ -145,6 +157,7 @@ class _HeatmapGrid extends StatelessWidget {
   }
 }
 
+//widget privato per singola cella della griglia
 class _Cella extends StatelessWidget {
   const _Cella({required this.colore, required this.consigliata, required this.bordo});
   final Color colore;
@@ -157,28 +170,29 @@ class _Cella extends StatelessWidget {
       padding: const EdgeInsets.all(1),
       child: SizedBox(
         height: 16,
+        //se la cella è quella consigliata, disegna un bordo evidenziato attorno
         child: consigliata
-            // Bordo spesso + gap interno per staccare dal colore della cella
             ? Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: bordo, width: 2.5),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                      color: colore, borderRadius: BorderRadius.circular(2)),
-                ),
-              )
+          decoration: BoxDecoration(
+            border: Border.all(color: bordo, width: 2.5),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          padding: const EdgeInsets.all(2),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+                color: colore, borderRadius: BorderRadius.circular(2)),
+          ),
+        )
             : DecoratedBox(
-                decoration: BoxDecoration(
-                    color: colore, borderRadius: BorderRadius.circular(3)),
-              ),
+          decoration: BoxDecoration(
+              color: colore, borderRadius: BorderRadius.circular(3)),
+        ),
       ),
     );
   }
 }
 
+//widget privato per la legenda dei colori dell'affluenza
 class _Legenda extends StatelessWidget {
   const _Legenda();
 
@@ -190,6 +204,7 @@ class _Legenda extends StatelessWidget {
       children: [
         Text('Scala affluenza', style: tt.labelSmall),
         const SizedBox(height: 4),
+        //barra colorata graduale che indica i livelli di affluenza
         SizedBox(
           height: 12,
           child: Row(
@@ -210,6 +225,7 @@ class _Legenda extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
+        //etichette descrittive della legenda (Bassa, Media, Alta)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

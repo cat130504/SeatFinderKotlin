@@ -3,10 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/models.dart';
 
+// repository responsabile della gestione e del recupero dei dati relativi agli edifici e ai piani dal database supabase
 class EdificioRepository {
   EdificioRepository(this._db);
   final SupabaseClient _db;
 
+  // recupera in modo asincrono l'elenco completo di tutti gli edifici registrati
   Future<List<Edificio>> getEdifici() async {
     try {
       final rows = await _db.from('edificio').select('id, nome');
@@ -17,10 +19,11 @@ class EdificioRepository {
     }
   }
 
+  // recupera le quote dei piani associati a uno specifico edificio identificato dal suo id
   Future<List<PianoQuota>> getPiani(int idEdificio) async {
     try {
       final rows =
-          await _db.from('piano').select('quota').eq('edificio', idEdificio);
+      await _db.from('piano').select('quota').eq('edificio', idEdificio);
       return rows.map((r) => PianoQuota.fromJson(r)).toList();
     } catch (e) {
       debugPrint('DB_ERROR Errore recupero piani: $e');
@@ -28,6 +31,7 @@ class EdificioRepository {
     }
   }
 
+  // restituisce una lista completa di righe di raccordo tra piani ed edifici per scopi di filtraggio
   Future<List<PianoRow>> getPianoRows() async {
     try {
       final rows = await _db.from('piano').select('quota, edificio');
@@ -38,7 +42,8 @@ class EdificioRepository {
     }
   }
 
-  /// (nomeEdificio, quota) del tavolo, o null.
+  // (nomeEdificio, quota) del tavolo, o null.
+  // interroga il database per ottenere le informazioni strutturali dettagliate di un tavolo specifico tramite relazioni annidate
   Future<({String edificio, String quota})?> getInfoTavolo(int idTavolo) async {
     try {
       final r = await _db

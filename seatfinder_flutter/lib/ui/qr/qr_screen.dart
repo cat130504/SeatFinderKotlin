@@ -8,10 +8,9 @@ import '../../core/supabase_client.dart';
 import '../../data/tavolo_repository.dart';
 import 'scanner_overlay.dart';
 
+// Schermata per la scansione del QR code del tavolo
 class QrScreen extends StatefulWidget {
   const QrScreen({super.key, required this.onSuccessOccupazione});
-
-  /// (idTavolo, lat, lng)
   final Future<void> Function(int, double?, double?) onSuccessOccupazione;
 
   @override
@@ -19,25 +18,29 @@ class QrScreen extends StatefulWidget {
 }
 
 class _QrScreenState extends State<QrScreen> {
+  //repository per interagire con il database dei tavoli
   final _repo = TavoloRepository(AppSupabase.client);
+  //controller per gestire la fotocamera e la scansione dei codici a barre QR
   final _scanner = MobileScannerController(
     formats: const [BarcodeFormat.qrCode],
     facing: CameraFacing.back,
   );
 
-  bool _isScanned = false;
-  bool _torchOn = false;
-  bool? _hasCamera; // null = in attesa
-  bool _hasLocation = false;
+  bool _isScanned = false; //flag per evitare scansioni multiple consecutive
+  bool _torchOn = false; //stato della torcia (accesa/spenta)
+  bool? _hasCamera; //null = in attesa di verifica permessi
+  bool _hasLocation = false; //flag per i permessi di localizzazione
 
   @override
   void initState() {
     super.initState();
+    // richiede i permessi necessari all'avvio della schermata
     _permessi();
   }
 
+  //gunzione per gestire la richiesta dei permessi di fotocamera e posizione
   Future<void> _permessi() async {
-    // iOS: mobile_scanner mostra da solo la richiesta della fotocamera
+    //su iOS la gestione del permesso della fotocamera è integrata nel plugin
     if (Platform.isIOS) {
       var loc = await Permission.location.status;
       if (!loc.isGranted) loc = await Permission.location.request();
@@ -49,6 +52,7 @@ class _QrScreenState extends State<QrScreen> {
       return;
     }
 
+    //su Android richiede esplicitamente i permessi di camera e posizione
     var cam = await Permission.camera.status;
     if (!cam.isGranted) cam = await Permission.camera.request();
     var loc = await Permission.location.status;
@@ -61,6 +65,7 @@ class _QrScreenState extends State<QrScreen> {
     if (!cam.isGranted) _toast('Permesso camera negato');
   }
 
+  //mostra un messaggio a schermo (SnackBar)
   void _toast(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -68,17 +73,20 @@ class _QrScreenState extends State<QrScreen> {
       ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  //riabilita la scansione dopo un determinato intervallo di tempo
   Future<void> _riabilitaDopo(Duration d) async {
     await Future.delayed(d);
     if (mounted) _isScanned = false;
   }
 
+  // Funzione eseguita quando viene rilevato un codice QR
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_isScanned) return;
     final value = capture.barcodes.isEmpty ? null : capture.barcodes.first.rawValue;
     if (value == null) return;
     _isScanned = true;
 
+    //converte il testo del QR in un ID numerico del tavolo
     final id = int.tryParse(value.trim());
     if (id == null) {
       _toast('QR code non valido');
@@ -86,6 +94,7 @@ class _QrScreenState extends State<QrScreen> {
       return;
     }
 
+    //controlla quanti posti liberi rimangono sul tavolo
     final postiLiberi = await _repo.getPostiLiberi(id);
     if (postiLiberi < 0) {
       _toast('Impossibile leggere il tavolo, riprova');
@@ -100,6 +109,7 @@ class _QrScreenState extends State<QrScreen> {
 
     double? lat;
     double? lng;
+    //se il permesso di posizione è attivo, acquisisce le coordinate GPS attuali
     if (_hasLocation) {
       try {
         final pos = await Geolocator.getCurrentPosition(
@@ -124,6 +134,7 @@ class _QrScreenState extends State<QrScreen> {
       }
     }
 
+    //tenta di occupare il tavolo inviando i dati al database
     final ok = await _repo.occupaTavolo(id, SessionManager.instance.userId,
         lat: lat, lng: lng);
     if (!ok) {
@@ -132,15 +143,18 @@ class _QrScreenState extends State<QrScreen> {
       return;
     }
 
+    //mostra un messaggio di successo personalizzato in base ai posti rimanenti
     final rimasti = postiLiberi - 1;
     _toast(switch (postiLiberi) {
       1 => 'Tavolo occupato, tutti i posti sono occupati',
       2 => 'Tavolo occupato, $rimasti posto rimanente',
       _ => 'Tavolo occupato, $rimasti posti rimanenti',
     });
+    // Esegue la callback di successo passata dal widget genitore
     await widget.onSuccessOccupazione(id, lat, lng);
   }
 
+  //attiva o disattiva la torcia dello smartphone
   Future<void> _toggleTorch() async {
     try {
       await _scanner.toggleTorch();
@@ -152,15 +166,18 @@ class _QrScreenState extends State<QrScreen> {
 
   @override
   void dispose() {
+    //rilascia le risorse del controller dello scanner alla chiusura
     _scanner.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    //mostra un caricamento se lo stato dei permessi della fotocamera non è ancora definito
     if (_hasCamera == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    //se il permesso della fotocamera è stato negato, mostra un avviso con il link alle impostazioni
     if (_hasCamera == false) {
       return Center(
         child: Column(
@@ -178,12 +195,13 @@ class _QrScreenState extends State<QrScreen> {
         ),
       );
     }
+    //struttura principale della schermata di scansione con fotocamera e overlay grafico
     return Stack(
       fit: StackFit.expand,
       children: [
         MobileScanner(controller: _scanner, onDetect: _onDetect, fit: BoxFit.cover),
         const ScannerOverlay(),
-        // Testo sotto il riquadro (boxSize 260 -> bordo inferiore a centro + 130)
+        // Testo guida posizionato sotto il riquadro di scansione
         Center(
           child: Transform.translate(
             offset: const Offset(0, 130 + 28),
@@ -193,6 +211,7 @@ class _QrScreenState extends State<QrScreen> {
             ),
           ),
         ),
+        //pulsante in basso per accendere o spegnere la torcia
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(

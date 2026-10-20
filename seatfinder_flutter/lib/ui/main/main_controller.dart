@@ -10,6 +10,7 @@ import '../../data/tavolo_repository.dart';
 import '../../domain/models.dart';
 import '../../services/ping_service.dart';
 
+//classe map selezione per rappresentare lo stato attuale della mappa con caratteristica edificio e quota
 class MapSelezione {
   final Edificio? edificio;
   final List<PianoQuota> piani;
@@ -17,34 +18,38 @@ class MapSelezione {
   const MapSelezione({this.edificio, this.piani = const [], this.quota});
 }
 
-/// Equivalente di MainViewModel + dello stato condiviso di TavoloRepository
-/// (tavoloAttuale / refreshTick) + LaunchedEffect che avvia/ferma il servizio.
 class MainController extends ChangeNotifier {
+
+  //main controller ascolta i dati provenienti dal task in background (FlutterForegroundTask) ed
+  //avvia l'inizializzazione.
   MainController() {
     FlutterForegroundTask.addTaskDataCallback(_onTaskData);
     _init();
   }
 
+  //ottiene tutti i tavoli e gli edifici
   final _tavoli = TavoloRepository(AppSupabase.client);
   final _edificiRepo = EdificioRepository(AppSupabase.client);
 
+
+  //dichiarazione dello stato reattivo
   int? tavoloAttuale;
   ({String edificio, String quota})? infoTavolo;
   List<Edificio> edifici = [];
   MapSelezione selezione = const MapSelezione();
   bool ready = false;
   int refreshTick = 0;
-
   double? tavoloLat;
   double? tavoloLng;
-
   Timer? _heartbeat;
   bool _disposed = false;
 
+  //notify funzionane solo se non é stato fatto il dispose
   void _notify() {
     if (!_disposed) notifyListeners();
   }
 
+  //verifica se l'utente ha gia un tavolo occupato e carica i dati dal database
   Future<void> _init() async {
     try {
       final id = await _tavoli.getTavoloUtente(SessionManager.instance.userId);
@@ -56,6 +61,7 @@ class MainController extends ChangeNotifier {
     }
   }
 
+  //caricamento degli edifici
   Future<void> _caricaEdifici() async {
     try {
       edifici = await _edificiRepo.getEdifici();
@@ -66,6 +72,7 @@ class MainController extends ChangeNotifier {
     }
   }
 
+  //caricamento dei piani
   Future<void> _caricaPiani(Edificio edificio) async {
     final piani = await _edificiRepo.getPiani(edificio.id);
     selezione = MapSelezione(
@@ -76,16 +83,17 @@ class MainController extends ChangeNotifier {
     _notify();
   }
 
+  //selezione asincrona di edificio carica i piani
   void selezionaEdificio(Edificio e) => _caricaPiani(e);
 
+  //alla selezione del piano si crea un nuovo stato di MapSelezione per aggiornare la vista
   void selezionaPiano(String quota) {
     selezione = MapSelezione(
         edificio: selezione.edificio, piani: selezione.piani, quota: quota);
     _notify();
   }
 
-  // ---------- tavolo occupato ----------
-
+  //imposta i valori dopo che l'utente occupa untavolo sia testuali che il tavolo attuale
   Future<void> _setTavolo(int? id) async {
     tavoloAttuale = id;
     refreshTick++;
@@ -94,6 +102,7 @@ class MainController extends ChangeNotifier {
     await _sincronizzaServizio();
   }
 
+  //avvio o interruzione del servizio pingservice per verificare la posizione e l'occupazione
   Future<void> _sincronizzaServizio() async {
     final id = tavoloAttuale;
     _heartbeat?.cancel();
@@ -127,8 +136,10 @@ class MainController extends ChangeNotifier {
     final ok = await _tavoli.liberaTavolo(id, SessionManager.instance.userId);
     if (ok) await _setTavolo(null);
   }
-
-  /// Il servizio in background ha liberato il tavolo (allontanamento / app chiusa).
+  //_onTaskData intercetta i messaggi inviati dal task in background
+  //(ad es. se il sistema libera automaticamente il tavolo per allontanamento) resettando lo stato locale.
+  //Il metodo logout libera il tavolo attivo prima di scollegare l'utente.
+  //Infine, dispose pulisce il timer attivo, rimuove il listener del task in background e rilascia le risorse del controller.
   void _onTaskData(Object data) {
     if (data is Map && data['type'] == 'liberato') {
       tavoloAttuale = null;

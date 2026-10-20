@@ -5,6 +5,7 @@ import '../../domain/stats.dart';
 import 'stats_colors.dart';
 import 'stats_controllers.dart';
 
+// schermata principale delle statistiche del profilo utente
 class ProfileStatsScreen extends StatefulWidget {
   const ProfileStatsScreen({super.key});
 
@@ -18,21 +19,25 @@ class _ProfileStatsScreenState extends State<ProfileStatsScreen> {
   @override
   void initState() {
     super.initState();
+    // inizializza il controller delle statistiche e si iscrive ai cambiamenti di stato per aggiornare la ui
     _c = ProfileStatsController()..addListener(() => setState(() {}));
-    // dopo il primo frame: carica() notifica subito i listener
+    // attende il completamento del primo rendering per avviare il caricamento asincrono dei dati personali
     WidgetsBinding.instance.addPostFrameCallback((_) => _c.carica());
   }
 
   @override
   void dispose() {
+    // rilascia le risorse allocate dal controller quando la schermata viene rimossa definitivamente
     _c.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // mostra un indicatore circolare di caricamento finché i dati non sono completamente pronti
     if (_c.loading) return const Center(child: CircularProgressIndicator());
 
+    // gestisce lo stato di errore mostrando un avviso e un pulsante per ritentare l'operazione
     if (_c.errore) {
       return Center(
         child: Column(
@@ -46,6 +51,7 @@ class _ProfileStatsScreenState extends State<ProfileStatsScreen> {
       );
     }
 
+    // mostra un messaggio vuoto se l'utente non possiede alcuno storico di occupazione registrato
     if (_c.occupazioni.isEmpty) {
       return const Center(
         child: Padding(
@@ -57,6 +63,7 @@ class _ProfileStatsScreenState extends State<ProfileStatsScreen> {
     }
 
     final occ = _c.occupazioni;
+    // struttura principale scorrevole che racchiude tutte le sezioni statistiche del profilo
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -75,13 +82,14 @@ class _ProfileStatsScreenState extends State<ProfileStatsScreen> {
 }
 
 // ---------- helper ----------
+// estensione di supporto per estrarre facilmente il giorno della settimana e l'ora locale da un'occupazione
 extension _OccX on OccupazioneUtente {
   DateTime get _locale => inizio.toLocal();
   int get dow => _locale.weekday % 7; // 0 = domenica
   int get ora => _locale.hour;
 }
 
-/// Chiave più frequente (equivalente di groupingBy.eachCount().maxByOrNull).
+// funzione di utilità generica per calcolare l'elemento con la frequenza maggiore in una collezione
 K? _piuFrequente<K>(Iterable<K> chiavi) {
   final conteggio = <K, int>{};
   for (final k in chiavi) {
@@ -98,6 +106,7 @@ K? _piuFrequente<K>(Iterable<K> chiavi) {
   return best;
 }
 
+// funzione di utilità per contare e mappare le occorrenze di ciascun elemento all'interno di un iterabile
 Map<K, int> _conta<K>(Iterable<K> chiavi) {
   final m = <K, int>{};
   for (final k in chiavi) {
@@ -108,6 +117,7 @@ Map<K, int> _conta<K>(Iterable<K> chiavi) {
 
 // ---------- 1. Riepilogo ----------
 
+// sezione dedicata alla visualizzazione sintetica delle metriche chiave e delle preferenze utente
 class _SezioneRiepilogo extends StatelessWidget {
   const _SezioneRiepilogo(this.occ);
   final List<OccupazioneUtente> occ;
@@ -150,6 +160,7 @@ class _SezioneRiepilogo extends StatelessWidget {
   }
 }
 
+// componente grafico singolo a forma di tessera per presentare una singola metrica di riepilogo
 class _Tessera extends StatelessWidget {
   const _Tessera(this.label, this.valore);
   final String label;
@@ -180,6 +191,7 @@ class _Tessera extends StatelessWidget {
 
 // ---------- 2. Heatmap personale ----------
 
+// sezione che riproduce una mappa di calore basata esclusivamente sulle abitudini di occupazione dell'utente
 class _SezioneHeatmapProfilo extends StatelessWidget {
   const _SezioneHeatmapProfilo(this.occ);
   final List<OccupazioneUtente> occ;
@@ -200,6 +212,7 @@ class _SezioneHeatmapProfilo extends StatelessWidget {
           children: [
             Text('Le tue fasce di occupazione', style: tt.titleMedium),
             const SizedBox(height: 8),
+            // riga di intestazione contenente i giorni della settimana ordinati a partire da oggi
             Row(children: [
               const SizedBox(width: 26),
               for (final dow in ordine)
@@ -216,6 +229,7 @@ class _SezioneHeatmapProfilo extends StatelessWidget {
                 ),
             ]),
             const SizedBox(height: 2),
+            // iterazione sulle fasce orarie della giornata per costruire la griglia della heatmap
             for (final h in StatsConfig.oreApertura)
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
@@ -234,6 +248,7 @@ class _SezioneHeatmapProfilo extends StatelessWidget {
   }
 }
 
+// componente che rappresenta una singola cella all'interno della griglia della heatmap personale
 class _CellaProfilo extends StatelessWidget {
   const _CellaProfilo(this.n, this.maxN);
   final int n;
@@ -241,7 +256,7 @@ class _CellaProfilo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 0 occupazioni: neutro + bordo sottile; altrimenti scala cromatica
+    // assegna un colore neutro se il conteggio è zero, altrimenti calcola la tonalità cromatica in base al massimo
     final colore = n == 0 ? colVuota.withValues(alpha: 0.35) : coloreOccupazione(n / maxN);
     return Padding(
       padding: const EdgeInsets.all(1),
@@ -260,6 +275,7 @@ class _CellaProfilo extends StatelessWidget {
   }
 }
 
+// legenda esplicativa della scala cromatica utilizzata nella heatmap del profilo utente
 class _LegendaProfilo extends StatelessWidget {
   const _LegendaProfilo();
 
@@ -274,7 +290,7 @@ class _LegendaProfilo extends StatelessWidget {
         SizedBox(
           height: 12,
           child: Row(children: [
-            // Cella grigia = nessuna occupazione
+            // cella iniziale dedicata specificamente a rappresentare l'assenza di dati o zero occupazioni
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -314,6 +330,7 @@ class _LegendaProfilo extends StatelessWidget {
 
 // ---------- 3. Luoghi più usati ----------
 
+// sezione che analizza e ordina gli edifici e i piani frequentati con maggiore assiduità
 class _SezioneLuoghi extends StatelessWidget {
   const _SezioneLuoghi(this.occ);
   final List<OccupazioneUtente> occ;
@@ -334,6 +351,7 @@ class _SezioneLuoghi extends StatelessWidget {
           children: [
             Text('Dove occupi i tavoli', style: tt.titleMedium),
             const SizedBox(height: 12),
+            // genera una barra di progresso proporzionale per ciascun luogo registrato nello storico
             for (final e in luoghi)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -362,10 +380,12 @@ class _SezioneLuoghi extends StatelessWidget {
 
 // ---------- 4. Ultime occupazioni ----------
 
+// sezione cronologica che elenca in ordine inverso le ultime attività di occupazione svolte
 class _SezioneUltime extends StatelessWidget {
   const _SezioneUltime(this.occ);
   final List<OccupazioneUtente> occ;
 
+  // funzione interna per formattare la data e l'orario in una stringa leggibile e compatta
   String _fmt(DateTime d) {
     String p(int n) => n.toString().padLeft(2, '0');
     final l = d.toLocal();
@@ -386,6 +406,7 @@ class _SezioneUltime extends StatelessWidget {
           children: [
             Text('Ultime occupazioni', style: tt.titleMedium),
             const SizedBox(height: 8),
+            // cicla sulle ultime dieci occupazioni ordinate cronologicamente dalla più recente alla meno recente
             for (final o in ultime) ...[
               Text('${o.edificioNome} · ${o.quota}', style: tt.labelLarge),
               Text('Tavolo ${o.tavoloId} · ${_fmt(o.inizio)}',

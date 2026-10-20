@@ -6,8 +6,6 @@ import 'package:geolocator/geolocator.dart';
 
 Future<void>? _inFlight;
 
-/// Richiede permessi di Notifica (Android 13+ e iOS) e Posizione.
-/// Non rimane bloccata se l'utente nega al primo avvio: resetta _inFlight a fine esecuzione.
 Future<void> richiediPermessiIniziali() {
   return _inFlight ??= _richiedi().whenComplete(() => _inFlight = null);
 }
@@ -31,7 +29,7 @@ Future<void> _richiedi() async {
     debugPrint('Errore richiesta permesso notifiche: $e');
   }
 
-  // 2. Permesso Posizione tramite Geolocator (funziona su iOS e Android senza Podfile custom)
+  // 2. Permesso Posizione tramite Geolocator
   try {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -48,7 +46,6 @@ Future<void> _richiedi() async {
   }
 }
 
-/// Helper comodo per verificare se abbiamo almeno il permesso WhenInUse o Always
 Future<bool> haPermessoPosizione() async {
   final perm = await Geolocator.checkPermission();
   return perm == LocationPermission.whileInUse ||

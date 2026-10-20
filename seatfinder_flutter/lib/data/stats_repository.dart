@@ -5,6 +5,7 @@ import '../domain/models.dart';
 import 'edificio_repository.dart';
 import 'tavolo_repository.dart';
 
+// repository principale per il recupero e l'aggregazione dei dati statistici e di flusso dal database supabase
 class StatsRepository {
   StatsRepository(this._db)
       : _tavoli = TavoloRepository(_db),
@@ -14,6 +15,7 @@ class StatsRepository {
   final TavoloRepository _tavoli;
   final EdificioRepository _edifici;
 
+  // richiama una funzione remota (rpc) su supabase per ottenere i dati storici aggregati dei flussi di occupazione
   Future<List<StatsFlussoRow>> getStatsFlusso(int giorni) async {
     try {
       final rows = await _db.rpc('stats_flusso', params: {'p_giorni': giorni});
@@ -26,17 +28,19 @@ class StatsRepository {
     }
   }
 
-  /// Lancia in caso di errore (la UI mostra "Riprova"), come in Kotlin.
+  //lancia in caso di errore (la UI mostra "Riprova"), come in Kotlin.
+  //recupera lo storico completo di tutte le occupazioni effettuate da un determinato utente ordinandole per data discendente
   Future<List<OccupazioneUtente>> getOccupazioniUtente(int userId) async {
     final rows = await _db
         .from('occupazione')
         .select('id_tavolo, data_occupazione, lat_occupazione, lng_occupazione, '
-            'tavolo:id_tavolo(quota, piano(edificio(nome)))')
+        'tavolo:id_tavolo(quota, piano(edificio(nome)))')
         .eq('id_utente', userId)
         .order('data_occupazione', ascending: false);
     return rows.map((r) => OccupazioneUtente.fromJson(r)).toList();
   }
 
+  // calcola lo stato attuale in tempo reale di occupazione dei tavoli aggregando i dati per ciascun piano ed edificio
   Future<List<StatoPiano>> getStatoAttualePerPiano() async {
     try {
       final tavoli = await _tavoli.getTavoli();

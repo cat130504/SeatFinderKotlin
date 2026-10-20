@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+//funzione di utilità asincrona per mostrare un dialogo di conferma per il profilo/logout
 Future<void> showProfileDialog(
   BuildContext context, {
   required String nome,
   required VoidCallback onConfirmLogout,
 }) {
+
+  //contenuto del dialog con nome, campi di testo e bottoni
   return showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(

@@ -4,8 +4,10 @@ import '../core/config.dart';
 import 'permissions.dart';
 import 'ping_task_handler.dart';
 
-/// Equivalente di PingServiceLauncher + configurazione dei canali.
+//Equivalente di PingServiceLauncher + configurazione dei canali.
+// gestore principale del servizio in primo piano (foreground service) per il monitoraggio periodico della posizione e del tavolo
 class PingService {
+  // inizializza le opzioni di configurazione del task in primo piano, impostando i canali di notifica e i comportamenti di esecuzione
   static void init() {
     FlutterForegroundTask.init(
 
@@ -32,6 +34,7 @@ class PingService {
     );
   }
 
+  // avvia o riavvia il servizio in primo piano salvando i parametri necessari per l'esecuzione nell'isolate isolato
   static Future<void> start({
     required int idTavolo,
     required int userId,
@@ -69,12 +72,14 @@ class PingService {
     }
   }
 
+  // arresta l'esecuzione del servizio in primo piano se risulta attualmente attivo
   static Future<void> stop() async {
     if (await FlutterForegroundTask.isRunningService) {
       await FlutterForegroundTask.stopService();
     }
   }
 
-  /// Da chiamare periodicamente dalla UI finché c'è un tavolo occupato.
+  //da chiamare periodicamente dalla UI finché c'è un tavolo occupato.
+  // invia un segnale di heartbeat (battito cardiaco) al task in background per comunicare che l'applicazione è attiva
   static void sendHeartbeat() => FlutterForegroundTask.sendDataToTask('heartbeat');
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+
+//la classe estende StatelessWidget e implementa PreferredSizeWidget
+//(necessario per poterla inserire nella proprietà appBar di uno Scaffold).
+//definisce i parametri in ingresso e fissa l'altezza complessiva della barra a 72 pixel con preferredSize
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   const AppTopBar({
     super.key,
@@ -10,12 +14,14 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onLiberaClick,
   });
 
+  //parametri in ingresso
   final String? iniziali;
   final ({String edificio, String quota})? infoTavolo;
   final int? tavoloAttuale;
   final VoidCallback onProfileClick;
   final VoidCallback onLiberaClick;
 
+  //size di 72px
   @override
   Size get preferredSize => const Size.fromHeight(72);
 
@@ -24,6 +30,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
+    //restituisce appbar con altezza 72px e spaziatore laterale di 16px oltre ad altri parametri di stile
     return AppBar(
       toolbarHeight: 72,
       backgroundColor: cs.surface,
@@ -31,6 +38,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 16,
       title: Row(
         children: [
+          //avatar circolare cliccabile (con effetto di click) contentente le iniziali (nome-cognome) dell'utente
           Material(
             color: cs.primaryContainer,
             shape: const CircleBorder(),
@@ -53,6 +61,9 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+
+          //se l'utente sta occupando un tavolo, viene stampato in una colonna flessibile il piano,
+          //l'edificio ed il numero del tavolo.
           if (infoTavolo != null) ...[
             const SizedBox(width: 12),
             Expanded(
@@ -74,6 +85,9 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ],
       ),
+
+      //se l'utente sta occupando un tavolo, viene stampato un bottone con funzione onliberaclick per la liberazione
+      //del tavolo
       actions: [
         if (tavoloAttuale != null)
           Padding(

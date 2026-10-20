@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../auth/esse3_auth_api.dart';
 import '../auth/session_manager.dart';
 
+//schermata di login strutturata come StatefulWidget poiche lo stato cambia nel tempo
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -11,13 +12,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  //controller per leggere e manipolare il testo inserito nei campi di input
   final _matricola = TextEditingController();
   final _password = TextEditingController();
+  //flag per indicare se è in corso una richiesta di rete con esse3api
   bool _loading = false;
 
+  //getter che restituisce true solo se entrambi i campi non sono vuoti e non siamo in fase di caricamento
   bool get _canLogin =>
       _matricola.text.trim().isNotEmpty && _password.text.trim().isNotEmpty && !_loading;
 
+
+  //aggiunge un listener a entrambi i campi per aggiornare lo stato quando vengono modificati i campi di testo, utile per il bottone
   @override
   void initState() {
     super.initState();
@@ -25,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _password.addListener(() => setState(() {}));
   }
 
+  //rilascia le risorse dei controller quando la schermata viene distrutta
   @override
   void dispose() {
     _matricola.dispose();
@@ -32,16 +39,20 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  //snackbar da mostrare all'utente
   void _toast(String msg) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  //gestione dell'autenticazione, attiva lo state _loading, esegue la chiamata a esse3api, se positiva rimuove lo stato loading e
+  //salva l'utente in sessione altrimenti stampa un messaggio di errore in base al problema riscontrato.
   Future<void> _login() async {
     setState(() => _loading = true);
     final result =
         await EsseTreAuthApi.login(_matricola.text.trim(), _password.text.trim());
+
     if (!mounted) return;
     setState(() => _loading = false);
 
@@ -58,7 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // L'altezza dello schermo NON cambia quando appare la tastiera
     final screenHeight = MediaQuery.sizeOf(context).height;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -86,8 +96,10 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: EdgeInsets.fromLTRB(40, 0, 40, keyboard),
               child: Column(
                 children: [
-                  // Porta i campi nella zona bianca (regola 0.46 a gusto)
+                  //spaziatore verticale per posizionare i campi di testo in maniera corretta
                   SizedBox(height: screenHeight * 0.46),
+
+                  //campi di testo matricola/pwd
                   TextField(
                     controller: _matricola,
                     enabled: !_loading,
@@ -107,6 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: fieldDecoration.copyWith(labelText: 'Password'),
                   ),
                   const SizedBox(height: 24),
+                  //bottone login
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -119,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('Login'),
                     ),
                   ),
+                  //se loading é true mostra la barra circolare di caricamento
                   if (_loading) ...[
                     const SizedBox(height: 16),
                     const CircularProgressIndicator(),
