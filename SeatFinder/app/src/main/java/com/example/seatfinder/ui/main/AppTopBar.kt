@@ -13,11 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+//Top bar della schermata principale: cerchio con le iniziali, info del tavolo occupato e bottone "Libera Tavolo"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
     iniziali: String?,
-    infoTavolo: Pair<String, String>?,
+    infoTavolo: Pair<String, String>?,   //(nome edificio, quota)
     tavoloAttuale: Int?,
     onProfileClick: () -> Unit,
     onLiberaClick: () -> Unit
@@ -28,6 +29,7 @@ fun AppTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                //Cerchio cliccabile con le iniziali: apre ProfileDialog per il logout
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -44,6 +46,7 @@ fun AppTopBar(
                     )
                 }
 
+                //Info del tavolo occupato (edificio, piano, id). Visibili solo se tavoloAttuale non è null.
                 infoTavolo?.let { (edificio, quota) ->
                     Column {
                         Text(
@@ -66,6 +69,7 @@ fun AppTopBar(
             }
         },
         actions = {
+            //Bottone rosso per liberare subito il tavolo
             if (tavoloAttuale != null) {
                 Button(
                     onClick = onLiberaClick,

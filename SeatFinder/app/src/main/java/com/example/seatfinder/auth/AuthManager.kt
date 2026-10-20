@@ -5,6 +5,8 @@ import android.content.Intent
 import com.example.seatfinder.service.PingServiceLauncher
 import androidx.core.content.edit
 
+//Salva e ripristina la sessione, riaprendo l'app non serve rifare il login
+
 object AuthManager {
 
     private const val PREFS_NAME = "LoginPrefs"
@@ -12,11 +14,14 @@ object AuthManager {
     private const val KEY_INIZIALI = "iniziali"
     private const val KEY_EXPIRE_TIME = "expireTime"
 
-    // Durata della sessione: 7 giorni
+    //Durata della sessione: 7 giorni
     private const val SESSION_DURATION_MS = 7L * 24 * 60 * 60 * 1000
 
+    //Apre le SharedPreferences della sessione
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    //Prova a ripristinare la sessione salvata: true solo se userId valido, iniziali presenti e non scaduta
     fun restoreSession(context: Context): Boolean {
         val p = prefs(context)
         val userId = p.getInt(KEY_USER_ID, -1)
@@ -31,6 +36,7 @@ object AuthManager {
         return true
     }
 
+    //Salva la sessione su disco e in memoria, con scadenza a 7 giorni da adesso.
     fun saveSession(context: Context, user: UserLogin) {
         prefs(context).edit()
             .putInt(KEY_USER_ID, user.id)
@@ -41,6 +47,7 @@ object AuthManager {
         SessionManager.iniziali = user.iniziali
     }
 
+    //Logout: pulisce memoria e disco, ferma il PingService e riapre il LoginActivity
     fun logout(context: Context) {
         SessionManager.clear()
         prefs(context).edit().clear().apply()
@@ -48,6 +55,7 @@ object AuthManager {
 
         context.startActivity(
             Intent(context, LoginActivity::class.java).apply {
+                //Il tasto "indietro" non torna all'app
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
         )

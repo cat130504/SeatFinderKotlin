@@ -5,16 +5,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Tema unico dell'app. Volutamente solo light: la schermata di login
- * è pensata su sfondo chiaro, quindi non forziamo il dark mode.
- * Se in futuro si vorrà supportare il dark, aggiungere qui un
- * darkColorScheme() e scegliere con isSystemInDarkTheme().
- */
+//Tema globale dell'app
+
+
 private val LightColors = lightColorScheme(
     primary              = BrandBlue,
     onPrimary            = Color.White,
-    primaryContainer     = BrandBlue,       // voluto: tessere/blu piene
+    primaryContainer     = BrandBlue,
     onPrimaryContainer   = Color.White,
     secondary            = BrandBlue,
     onSecondary          = Color.White,
@@ -37,6 +34,7 @@ private val LightColors = lightColorScheme(
     outline              = OutlineLight,
 )
 
+// Wrapper unico del tema: va chiamato una volta per schermata
 @Composable
 fun SeatFinderTheme(content: @Composable () -> Unit) {
     MaterialTheme(

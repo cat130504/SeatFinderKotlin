@@ -25,9 +25,12 @@ import com.example.seatfinder.domain.stats.livelloAffluenza
 import com.example.seatfinder.domain.stats.mediaGiornaliera
 import com.example.seatfinder.domain.stats.occupazioniFascia
 
+//Nomi per esteso dei giorni
 private val NOMI_GIORNI = listOf(
     "domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"
 )
+
+//Sezione "Miglior orario": mostra la fascia consigliata per il giorno scelto
 
 @Composable
 internal fun SezioneMigliorOrario(
@@ -37,12 +40,15 @@ internal fun SezioneMigliorOrario(
     onGiornoChange: (Int) -> Unit,
     fasciaConsigliata: Int?
 ) {
+    //Ordine dei giorni da mostrare nei chip: stessi 5 feriali della heatmap
     val giorni = remember(todayDow) { giorniDaOggi(todayDow) }
 
+    //Occupazioni storiche nella fascia consigliata del giorno scelto.
     val occConsigliata = remember(rows, giornoSel, fasciaConsigliata) {
         fasciaConsigliata?.let { h -> occupazioniFascia(rows, giornoSel, h) } ?: 0
     }
 
+    //Titolo dinamico: "oggi" se il giorno scelto è oggi, altrimenti il nome del giorno
     val titolo = if (giornoSel == todayDow) "Miglior orario per oggi"
     else "Miglior orario per ${NOMI_GIORNI[giornoSel]}"
 
@@ -55,6 +61,7 @@ internal fun SezioneMigliorOrario(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            //Chip orizzontali per scegliere il giorno (oggi, domani, ...)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(giorni) { g ->
                     FilterChip(
@@ -66,6 +73,7 @@ internal fun SezioneMigliorOrario(
             }
 
             if (fasciaConsigliata != null) {
+                //Card principale: orario consigliato in grande + descrizione affluenza
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(12.dp),
@@ -81,6 +89,7 @@ internal fun SezioneMigliorOrario(
                         Text(
                             text = testoAffluenza(occConsigliata),
                             style = MaterialTheme.typography.bodySmall,
+                            //Colore semantico del livello di affluenza (verde/arancio/rosso)
                             color = livelloAffluenza(occConsigliata).colore()
                         )
                     }
@@ -95,6 +104,7 @@ internal fun SezioneMigliorOrario(
     }
 }
 
+//Costruisce il testo che descrive l'affluenza della fascia consigliata.
 private fun testoAffluenza(n: Int): String {
     val media = "%.1f".format(mediaGiornaliera(n))
     return when (livelloAffluenza(n)) {

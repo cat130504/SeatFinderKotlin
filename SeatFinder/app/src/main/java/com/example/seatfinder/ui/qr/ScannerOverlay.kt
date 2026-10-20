@@ -1,4 +1,5 @@
 package com.example.seatfinder.ui.qr
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -15,33 +16,35 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
+//Sovrapposizione disegnata sopra la fotocamera durante la scansione QR.
 @Composable
 fun ScannerOverlay(
     modifier: Modifier = Modifier,
-    boxSize: androidx.compose.ui.unit.Dp = 260.dp,
-    cornerLength: androidx.compose.ui.unit.Dp = 32.dp,
-    cornerRadius: androidx.compose.ui.unit.Dp = 16.dp,
-    strokeWidth: androidx.compose.ui.unit.Dp = 4.dp,
+    boxSize: androidx.compose.ui.unit.Dp = 260.dp,       //Lato del "buco" centrale
+    cornerLength: androidx.compose.ui.unit.Dp = 32.dp,  //Lunghezza di ogni angolo bianco
+    cornerRadius: androidx.compose.ui.unit.Dp = 16.dp,  //Raggio degli angoli del buco
+    strokeWidth: androidx.compose.ui.unit.Dp = 4.dp,    //Spessore degli angoli bianchi
     cornerColor: Color = Color.White,
-    scrimColor: Color = Color.Black.copy(alpha = 0.6f)
+    scrimColor: Color = Color.Black.copy(alpha = 0.6f)  //Scurimento fuori dal buco
 ) {
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            // necessario perché BlendMode.Clear funzioni correttamente
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     ) {
         val side = boxSize.toPx()
+        //Coordinate del quadrato centrale, centrato nella view
         val left = (size.width - side) / 2f
         val top = (size.height - side) / 2f
+
         val radius = cornerRadius.toPx()
         val len = cornerLength.toPx()
         val stroke = strokeWidth.toPx()
 
-        // 1) sfondo scuro su tutto lo schermo
+        //1) Sfondo scuro su tutto lo schermo
         drawRect(color = scrimColor)
 
-        // 2) "buco" trasparente al centro
+        //2) "Buco" trasparente al centro
         drawRoundRect(
             color = Color.Transparent,
             topLeft = Offset(left, top),
@@ -50,7 +53,7 @@ fun ScannerOverlay(
             blendMode = BlendMode.Clear
         )
 
-        // 3) angoli evidenziati
+        //3) Angoli bianchi del mirino
         val right = left + side
         val bottom = top + side
 
@@ -62,28 +65,24 @@ fun ScannerOverlay(
             )
         }
 
-        // alto-sinistra
         corner {
             moveTo(left, top + len)
             lineTo(left, top + radius)
             quadraticBezierTo(left, top, left + radius, top)
             lineTo(left + len, top)
         }
-        // alto-destra
         corner {
             moveTo(right - len, top)
             lineTo(right - radius, top)
             quadraticBezierTo(right, top, right, top + radius)
             lineTo(right, top + len)
         }
-        // basso-destra
         corner {
             moveTo(right, bottom - len)
             lineTo(right, bottom - radius)
             quadraticBezierTo(right, bottom, right - radius, bottom)
             lineTo(right - len, bottom)
         }
-        // basso-sinistra
         corner {
             moveTo(left + len, bottom)
             lineTo(left + radius, bottom)

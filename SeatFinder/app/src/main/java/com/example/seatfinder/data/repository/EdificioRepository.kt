@@ -11,8 +11,11 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+//Espone le letture su "edificio" e "piano", query annidata per ricavare (edificio, quota) da un tavolo
+
 object EdificioRepository {
 
+    //Elenco di tutti gli edifici. Usato dal FAB e da StatsScreen.
     suspend fun getEdifici(): List<Edificio> {
         return try {
             withContext(Dispatchers.IO) {
@@ -27,6 +30,7 @@ object EdificioRepository {
         }
     }
 
+    //Piani di un edificio specifico. Usato quando si cambia edificio dal FAB.
     suspend fun getPiani(idEdificio: Int): List<PianoQuota> {
         return try {
             withContext(Dispatchers.IO) {
@@ -43,6 +47,7 @@ object EdificioRepository {
         }
     }
 
+    //Tutte le coppie (quota, edificio). Serve a StatsRepository
     suspend fun getPianoRows(): List<PianoRowDto> {
         return try {
             withContext(Dispatchers.IO) {
@@ -57,6 +62,7 @@ object EdificioRepository {
         }
     }
 
+    //(nome edificio, quota) del tavolo indicato, ricavati con una query annidata
     suspend fun getInfoTavolo(idTavolo: Int): Pair<String, String>? {
         return try {
             withContext(Dispatchers.IO) {

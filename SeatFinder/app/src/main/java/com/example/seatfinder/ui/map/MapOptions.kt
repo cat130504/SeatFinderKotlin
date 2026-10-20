@@ -7,6 +7,7 @@ import com.example.seatfinder.data.remote.dto.Edificio
 import com.example.seatfinder.data.remote.dto.PianoQuota
 import com.example.seatfinder.ui.components.FabOption
 
+//Trasforma l'elenco dei piani in voci per il FAB (icona + label + azione)
 fun generaOpzioniPiani(
     piani: List<PianoQuota>,
     onPianoSelected: (quota: String) -> Unit
@@ -18,6 +19,7 @@ fun generaOpzioniPiani(
     )
 }
 
+//Stessa cosa per gli edifici: una voce di FAB per ogni edificio
 fun generaOpzioniEdifici(
     edifici: List<Edificio>,
     onEdificioSelected: (Edificio) -> Unit

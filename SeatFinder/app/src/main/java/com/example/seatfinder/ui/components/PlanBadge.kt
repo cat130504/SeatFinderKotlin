@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+//Badge flottante che mostra "Edificio: X   Piano: Y" sopra la mappa.
 @Composable
 fun PlanBadge(
     planName: String,
@@ -29,7 +30,7 @@ fun PlanBadge(
         ) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
+                contentDescription = null,   //Decorativa: il testo dice già tutto
                 modifier = Modifier.size(18.dp)
             )
             Text(

@@ -14,7 +14,11 @@ import com.example.seatfinder.data.remote.dto.toDomain
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 
+//"Cameriere" delle statistiche: solo letture dal DB, nessuna scrittura.
 object StatsRepository {
+
+    //Storico di affluenza: righe (quota, giorno, ora, occupazioni, posti totali)
+    // ottenute dalla funzione RPC "stats_flusso" su Supabase.
 
     suspend fun getStatsFlusso(giorni: Int): List<StatsFlussoRow> {
         return try {
@@ -32,6 +36,7 @@ object StatsRepository {
         }
     }
 
+    //Occupazioni dell'utente, dalla più recente
     suspend fun getOccupazioniUtente(userId: Int): List<OccupazioneUtente> =
         withContext(Dispatchers.IO) {
             SupabaseClient.client.postgrest
@@ -49,6 +54,7 @@ object StatsRepository {
                 .map { it.toDomain() }
         }
 
+    //Stato attuale per piano: aggrega i tavoli di ogni quota
     suspend fun getStatoAttualePerPiano(): List<StatoPiano> {
         return try {
             withContext(Dispatchers.IO) {
@@ -56,12 +62,15 @@ object StatsRepository {
                 val pianoRows = EdificioRepository.getPianoRows()
                 val edifici = EdificioRepository.getEdifici()
 
+                //quota → idEdificio: per associare ogni tavolo al suo edificio
                 val quotaToEdificioId = pianoRows.associate { it.quota to it.edificio }
+                //idEdificio → nome: per la label nella card
                 val idToNomeEdificio = edifici.associate { it.id to it.nome }
 
                 // Aggrega per quota
                 tavoli.groupBy { it.quota }
                     .map { (quota, lista) ->
+                        //Fallback "-1"/"—" se la quota non è mappata (dati incoerenti)
                         val edificioId = quotaToEdificioId[quota] ?: -1
                         val edificioNome = idToNomeEdificio[edificioId] ?: "—"
 

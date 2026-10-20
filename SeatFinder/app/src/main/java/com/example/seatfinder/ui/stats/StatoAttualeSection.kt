@@ -14,6 +14,8 @@ import com.example.seatfinder.data.remote.dto.Edificio
 import com.example.seatfinder.domain.model.StatoPiano
 import kotlinx.coroutines.delay
 
+//Sezione "Stato attuale" della schermata Statistiche.
+//Mostra, per ogni piano, una barra di disponibilità
 @Composable
 internal fun SezioneStatoAttuale(
     stato: List<StatoPiano>,
@@ -22,8 +24,10 @@ internal fun SezioneStatoAttuale(
     onEdificioChange: (Int?) -> Unit,
     ultimoAggiornamento: Long
 ) {
+    //Secondi passati dall'ultimo aggiornamento
     var secondiFa by remember { mutableIntStateOf(0) }
 
+    //Loop che ricalcola "secondiFa" ogni secondo.
     LaunchedEffect(ultimoAggiornamento) {
         while (true) {
             secondiFa = if (ultimoAggiornamento == 0L) 0
@@ -38,6 +42,7 @@ internal fun SezioneStatoAttuale(
                 Text("Stato attuale", style = MaterialTheme.typography.titleMedium)
             }
 
+            //Chip di filtro edificio: "Tutti" + uno per ogni edificio
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
                     FilterChip(
@@ -56,18 +61,22 @@ internal fun SezioneStatoAttuale(
             }
 
             if (stato.isEmpty()) {
+                //Primo caricamento: spinner piccolo al centro
                 Box(Modifier.fillMaxWidth().height(60.dp), Alignment.Center) {
                     CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
             } else {
+                //Una riga per piano
                 stato.forEach { s -> RigaStatoPiano(s) }
             }
         }
     }
 }
 
+//Riga di un singolo piano: nome + conteggi + barra di disponibilità.
 @Composable
 private fun RigaStatoPiano(s: StatoPiano) {
+    //Colore in base alla percentuale di occupazione
     val coloreBarra = coloreOccupazione(s.percentualeOccupazione)
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -86,6 +95,7 @@ private fun RigaStatoPiano(s: StatoPiano) {
             )
         }
 
+        //Barra di sfondo + barra colorata che riempie in proporzione alla disponibilità
         Box(
             Modifier
                 .fillMaxWidth()
@@ -94,6 +104,7 @@ private fun RigaStatoPiano(s: StatoPiano) {
         ) {
             Box(
                 Modifier
+                    //Larghezza = disponibilità. Più libero = barra più lunga e verde.
                     .fillMaxWidth(s.disponibilita.coerceIn(0f, 1f))
                     .height(10.dp)
                     .background(coloreBarra, RoundedCornerShape(5.dp))

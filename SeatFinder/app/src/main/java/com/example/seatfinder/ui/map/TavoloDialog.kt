@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.seatfinder.domain.model.Tavolo
 
+//Dialog informativo che appare quando si tappa un tavolo sulla mappa
+//Mostra i dati base del tavolo (id, posti, presa, posti disponibili)
 @Composable
 fun TavoloDialog(tavolo: Tavolo, onDismissRequest: () -> Unit) {
     Dialog(onDismissRequest = onDismissRequest) {

@@ -16,26 +16,37 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 
+//"Guardiano" del tavolo occupato: controlla periodicamente se l'utente è ancora vicino al tavolo.
+//Se si allontana troppo, mostra una notifica con due scelte (Mantieni / Libera)
+//e dopo 10 minuti senza rispostalibera il tavolo da solo.
+//Si spegne quando il tavolo viene liberato o quando l'app viene rimossa dai recenti.
 class PingService : Service() {
 
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
+
     private var pingJob: Job? = null
     private var liberazioneJob: Job? = null
     private var timeoutAllontanamentoJob: Job? = null
     private var pausaProrogaJob: Job? = null
 
+    //Dati del tavolo attuale (ricevuti via Intent all'avvio)
     private var idTavoloAttuale: Int? = null
     private var lat: Double? = null
     private var lng: Double? = null
 
-    // Stato gestione allontanamento
+    //Stato della gestione allontanamento:
+    //notificaAllontanamentoInCorso: c'è già una notifica "torna al tavolo" aperta
+    //inPausaAllontanamento: l'utente ha scelto "Mantieni", controlli sospesi per 10 min
     private var notificaAllontanamentoInCorso = false
     private var inPausaAllontanamento = false
 
     companion object {
+        //Canali notifica: uno "silenzioso" per lo stato, uno "urgente" per gli avvisi
         const val CHANNEL_ID = "ping_tavolo_channel"
         const val CHANNEL_ID_ALERT = "ping_tavolo_alert_channel"
 
+        //Id delle tre notifiche (stato, "tavolo liberato", richiesta di conferma)
         const val NOTIFICATION_ID = 1
         const val NOTIFICATION_ID_LIBERATO = 2
         const val NOTIFICATION_ID_CONFERMA = 3
@@ -44,13 +55,15 @@ class PingService : Service() {
         const val EXTRA_LAT = "lat"
         const val EXTRA_LNG = "lng"
 
+        //Azioni dei bottoni della notifica di conferma
         const val ACTION_MANTIENI = "com.example.seatfinder.ACTION_MANTIENI"
         const val ACTION_LIBERA = "com.example.seatfinder.ACTION_LIBERA"
 
-        const val SECONDI_GRAZIA = 15L
-        const val DISTANZA_MASSIMA_METRI = 50f
-        const val TIMEOUT_ALLONTANAMENTO_MS_NOTIFICA = 10 * 60 * 1000L // 10 minuti per rispondere prima di liberare
-        const val TIMEOUT_PAUSA_MS_NOTIFICA = 10 * 60 * 1000L          // 10 minuti di proroga prima di riverificare
+        //Tempi e soglie
+        const val SECONDI_GRAZIA = 15L                                 //Attesa dopo rimozione app prima di liberare
+        const val DISTANZA_MASSIMA_METRI = 50f                         //Soglia "allontanamento"
+        const val TIMEOUT_ALLONTANAMENTO_MS_NOTIFICA = 10 * 60 * 1000L //10 min per rispondere alla notifica
+        const val TIMEOUT_PAUSA_MS_NOTIFICA = 10 * 60 * 1000L          //10 min di proroga dopo "Mantieni"
     }
 
     override fun onCreate() {
@@ -73,6 +86,7 @@ class PingService : Service() {
 
         val idTavolo = intent?.getIntExtra(EXTRA_ID_TAVOLO, -1) ?: -1
 
+        //Notifica persistente: senza questo il sistema ucciderebbe il servizio
         startForeground(NOTIFICATION_ID, creaNotifica())
 
         liberazioneJob?.cancel()
@@ -80,6 +94,7 @@ class PingService : Service() {
 
         if (idTavolo != -1) {
             idTavoloAttuale = idTavolo
+            //Le coordinate sono opzionali: se mancano, il controllo distanza non parte
             if (intent!!.hasExtra(EXTRA_LAT)) lat = intent.getDoubleExtra(EXTRA_LAT, 0.0)
             if (intent.hasExtra(EXTRA_LNG)) lng = intent.getDoubleExtra(EXTRA_LNG, 0.0)
             avviaPing(idTavolo)
@@ -88,13 +103,14 @@ class PingService : Service() {
         return START_STICKY
     }
 
+    //Loop di controllo: ogni ciclo legge la posizione e la confronta con l'ancora.
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private fun avviaPing(idTavolo: Int) {
         pingJob?.cancel()
         pingJob = serviceScope.launch {
             while (isActive) {
 
-                // Controlla la distanza solo se non c'è una notifica attiva o non siamo nei 10 min di proroga
+                //Controlla solo se non c'è già una notifica aperta o una pausa in corso
                 if (!notificaAllontanamentoInCorso && !inPausaAllontanamento) {
                     controllaDistanza(idTavolo)
                 }
@@ -104,6 +120,8 @@ class PingService : Service() {
         }
     }
 
+    //Legge la posizione attuale e calcola la distanza dall'ancora.
+    //Se supera DISTANZA_MASSIMA_METRI, avvia la procedura di allontanamento.
     @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     private suspend fun controllaDistanza(idTavolo: Int) {
         val latAncora = lat ?: return
@@ -113,6 +131,7 @@ class PingService : Service() {
             val fusedClient = LocationServices.getFusedLocationProviderClient(this)
             val cancellationTokenSource = CancellationTokenSource()
 
+            //getCurrentLocation: prende la posizione "adesso"
             val location = fusedClient.getCurrentLocation(
                 Priority.PRIORITY_HIGH_ACCURACY,
                 cancellationTokenSource.token
@@ -135,6 +154,8 @@ class PingService : Service() {
         }
     }
 
+    //Mostra la notifica "ti sei allontanato" e avvia il timeout di 10 minuti.
+    //Se l'utente non risponde entro il timeout, il tavolo viene liberato.
     private fun avviaProceduraAllontanamento(idTavolo: Int) {
         notificaAllontanamentoInCorso = true
         mostraNotificaConferma()
@@ -151,17 +172,19 @@ class PingService : Service() {
         }
     }
 
+    //Bottone "Mantieni": cancella il timeout di liberazione e sospende i controlli
+    //per 10 minuti (l'utente sta tornando al tavolo).
     private fun gestisciMantieni() {
         Log.d("DEBUG_LOC", "L'utente ha scelto di mantenere il tavolo: pausa controlli per 10 minuti")
 
-        // Cancella il timer di liberazione automatica
+        //Annulla la liberazione automatica
         timeoutAllontanamentoJob?.cancel()
         timeoutAllontanamentoJob = null
 
         nascondiNotificaConferma()
         notificaAllontanamentoInCorso = false
 
-        // Entra in pausa per 10 minuti mantenendo le coordinate originali del tavolo
+        //Pausa di 10 min: dopo, il loop riprende a controllare la distanza
         inPausaAllontanamento = true
         pausaProrogaJob?.cancel()
         pausaProrogaJob = serviceScope.launch {
@@ -171,6 +194,7 @@ class PingService : Service() {
         }
     }
 
+    //Bottone "Libera": libera subito e ferma il servizio.
     private fun gestisciLiberaSubito() {
         Log.d("DEBUG_LOC", "L'utente ha scelto di liberare il tavolo")
         timeoutAllontanamentoJob?.cancel()
@@ -188,6 +212,8 @@ class PingService : Service() {
         }
     }
 
+    //Chiamato quando l'app viene rimossa dalle app recenti.
+    //Diamo SECONDI_GRAZIA per riaprirla; se l'utente non torna, il tavolo viene liberato.
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         val idTavolo = idTavoloAttuale
@@ -205,6 +231,9 @@ class PingService : Service() {
         }
     }
 
+    //Crea i due canali notifica.
+    //CHANNEL_ID: importanza bassa, silenzioso, per la notifica "sto mantenendo il tavolo"
+    //CHANNEL_ID_ALERT: importanza alta, per l'avviso di allontanamento (deve attirare l'attenzione)
     private fun creaCanaliNotifica() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(NotificationManager::class.java)
@@ -228,6 +257,7 @@ class PingService : Service() {
         }
     }
 
+    //Notifica persistente (foreground): comunica che stai mantenendo il tavolo.
     private fun creaNotifica(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Tavolo occupato")
@@ -237,6 +267,7 @@ class PingService : Service() {
             .build()
     }
 
+    //Notifica "ti sei allontanato" con due bottoni: Mantieni (+10 min) e Libera.
     private fun mostraNotificaConferma() {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
@@ -269,6 +300,9 @@ class PingService : Service() {
         manager.cancel(NOTIFICATION_ID_CONFERMA)
     }
 
+    //Notifica "tavolo liberato". Due messaggi:
+    //l'utente si è allontanato (o ha premuto Libera)
+    //l'app è stata chiusa dai recenti
     private fun mostraNotificaLiberato(a: Int) {
         val messaggio = if (a == 0) {
             "Ti sei allontanato, il tavolo è stato liberato."
@@ -288,6 +322,7 @@ class PingService : Service() {
         manager.notify(NOTIFICATION_ID_LIBERATO, notifica)
     }
 
+    //Pulizia
     override fun onDestroy() {
         super.onDestroy()
         pingJob?.cancel()

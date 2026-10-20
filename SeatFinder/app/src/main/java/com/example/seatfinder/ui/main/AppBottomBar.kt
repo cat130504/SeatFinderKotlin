@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import com.example.seatfinder.ui.navigation.Destination
 
+//Bottom bar: una voce per ogni Destination. Riceve la route corrente per evidenziare la voce attiva
 @Composable
 fun AppBottomBar(
     currentRoute: String?,
@@ -28,7 +29,9 @@ fun AppBottomBar(
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp
         ) {
+            //Iteriamo su tutte le Destination
             Destination.entries.forEach { destination ->
+                //Solo il QR è condizionabile: se hai già un tavolo non puoi scansionarne un altro
                 val isEnabled = if (destination == Destination.QR) scanEnabled else true
                 val isSelected = currentRoute == destination.route
 

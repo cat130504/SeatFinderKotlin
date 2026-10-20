@@ -48,6 +48,9 @@ import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+//Schermata di scansione QR: apre la fotocamera, legge il codice del tavolo,
+//verifica se ci sono posti e (se sì) occupa il tavolo.
+//Gestisce da sola i permessi (camera + posizione) con i launcher di Compose.
 @Composable
 fun QrScreen(
     onSuccessOccupazione: (Int, Double?, Double?) -> Unit = { _, _, _ -> },  // id tavolo, lat, lng
@@ -57,9 +60,14 @@ fun QrScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
 
+    //Flag "ho già letto un QR": evita di elaborare più scansioni di fila.
     var isScanned by remember { mutableStateOf(false) }
+
+    //Riferimento alla camera: serve per la torcia
     var camera by remember { mutableStateOf<Camera?>(null) }
     var torchOn by remember { mutableStateOf(false) }
+
+    //Permesso camera: stato iniziale letto dal sistema
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -69,6 +77,7 @@ fun QrScreen(
         )
     }
 
+    //Client posizione: serve a salvare lat/lng dell'occupazione
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     var hasLocationPermission by remember {
@@ -77,6 +86,7 @@ fun QrScreen(
         )
     }
 
+    //Launcher per il permesso posizione
     val locationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted -> hasLocationPermission = granted }
@@ -88,6 +98,7 @@ fun QrScreen(
         }
     }
 
+    //Launcher per il permesso camera
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
@@ -117,6 +128,7 @@ fun QrScreen(
                         val preview = Preview.Builder().build()
                         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
+                        //Scanner QR di ML Kit
                         val scanner = BarcodeScanning.getClient(
                             BarcodeScannerOptions.Builder()
                                 .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
@@ -135,11 +147,15 @@ fun QrScreen(
                                 onScanSuccess = { qrValue ->
                                     isScanned = true
                                     coroutineScope.launch {
+                                        //Il QR contiene solo l'id del tavolo
                                         val id = qrValue.toIntOrNull() ?: return@launch
+
+                                        //1) Controlla se ci sono posti liberi
                                         val postiLiberi = TavoloRepository.getPostiLiberi(id)
                                         var rimasti = postiLiberi
 
                                         if (postiLiberi > 0) {
+                                            //2) Prova a leggere la posizione (se permessa)
                                             var lat: Double? = null
                                             var lng: Double? = null
                                             if (hasLocationPermission) {
@@ -152,6 +168,7 @@ fun QrScreen(
                                                 }
                                             }
                                             try {
+                                                //3) Occupa il tavolo.
                                                 TavoloRepository.occupaTavolo(id, SessionManager.userId, lat, lng)
                                                 rimasti = postiLiberi - 1
                                                 val msg = when (postiLiberi) {
@@ -167,6 +184,7 @@ fun QrScreen(
                                                 isScanned = false
                                             }
                                         } else {
+                                            //Tavolo pieno o non trovato: resetto e lascio riprovare
                                             Toast.makeText(context, "Tavolo pieno, non occupabile", Toast.LENGTH_SHORT).show()
                                             isScanned = false
                                         }
@@ -195,9 +213,10 @@ fun QrScreen(
                 }
             )
 
+            //Mirino
             ScannerOverlay()
 
-            // Testo sotto il riquadro di scansione (boxSize = 260dp → bordo inferiore a center + 130dp)
+            //Testo sotto il riquadro
             Text(
                 text = "Inquadra il QR code del tavolo",
                 color = Color.White,
@@ -206,7 +225,7 @@ fun QrScreen(
                     .padding(top = 180.dp)
             )
 
-            // Torcia in basso, indipendente dal testo
+            //Pulsante torcia: mostrato solo se la camera ha il flash
             if (camera?.cameraInfo?.hasFlashUnit() == true) {
                 IconButton(
                     onClick = {

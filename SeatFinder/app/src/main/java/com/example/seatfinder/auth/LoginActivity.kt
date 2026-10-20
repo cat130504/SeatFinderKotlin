@@ -46,15 +46,17 @@ import com.example.seatfinder.R
 import com.example.seatfinder.ui.theme.SeatFinderTheme
 import kotlinx.coroutines.launch
 
+//Schermata di login: se la sessione è valida salta il login, altrimenti mostra LoginScreen
+//Al successo salva la sessione e passa a MainActivity
 class LoginActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Immagine a tutto schermo, sotto la status bar
+        // Immagine a tutto schermo sotto la status bar
         enableEdgeToEdge()
 
-        // Se la sessione è ancora valida, salta il login
+        // Sessione ancora valida: salta il login
         if (AuthManager.restoreSession(this)) {
             goToMain()
             return
@@ -67,12 +69,14 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    //Apre MainActivity e chiude questa Activity
     private fun goToMain() {
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }
 }
 
+//UI del login. Gestisce localmente i due campi, lo stato di caricamento e il bottone abilitato
 @Composable
 private fun LoginScreen(onLoginSuccess: () -> Unit) {
     val context = LocalContext.current
@@ -82,9 +86,10 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
 
+    //Bottone attivo solo con entrambi i campi pieni e nessuna richiesta in corso
     val canLogin = matricola.isNotBlank() && password.isNotBlank() && !loading
 
-    // Altezza schermo: NON cambia quando appare la tastiera
+    //Altezza schermo non cambia quando appare la tastiera
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
@@ -111,9 +116,9 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                 .padding(horizontal = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Posizione fissa: porta i campi nella zona bianca (regola 0.46f a gusto)
+            //Spinge i campi nella zona bianca dell'immagine
             Spacer(Modifier.height(screenHeight * 0.46f))
-
+            //Campo matricola
             OutlinedTextField(
                 value = matricola,
                 onValueChange = { matricola = it },
@@ -125,7 +130,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
             )
 
             Spacer(Modifier.height(16.dp))
-
+            //Campo password
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -142,7 +147,7 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
             )
 
             Spacer(Modifier.height(24.dp))
-
+            //Bottone login
             Button(
                 onClick = {
                     loading = true
@@ -152,9 +157,10 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
                             password.trim()
                         )
                         loading = false
-
+                        //Gestione esiti login
                         when (result) {
                             is LoginResult.Success -> {
+                                // Salva poi chiude la schermata
                                 AuthManager.saveSession(context, result.user)
                                 onLoginSuccess()
                             }
@@ -181,13 +187,13 @@ private fun LoginScreen(onLoginSuccess: () -> Unit) {
             ) {
                 Text("Login")
             }
-
+            //Barra icrcolare di caricamento
             if (loading) {
                 Spacer(Modifier.height(16.dp))
                 CircularProgressIndicator()
             }
 
-            Spacer(Modifier.height(32.dp)) // margine in fondo per lo scroll
+            Spacer(Modifier.height(32.dp)) // margine per lo scroll con tastiera
         }
     }
 }

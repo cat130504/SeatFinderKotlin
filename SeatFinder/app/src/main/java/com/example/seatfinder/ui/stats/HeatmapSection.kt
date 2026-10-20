@@ -20,8 +20,10 @@ import com.example.seatfinder.data.remote.dto.StatsFlussoRow
 import com.example.seatfinder.domain.stats.StatsConfig
 import com.example.seatfinder.domain.stats.giorniDaOggi
 
+//Etichette brevi dei giorni, indicizzate come giorno_settimana
 internal val LABEL_GIORNI = listOf("Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab")
 
+//Sezione heatmap della schermata Statistiche: una griglia giorni × ore
 @Composable
 internal fun SezioneHeatmap(
     rows: List<StatsFlussoRow>,
@@ -30,13 +32,16 @@ internal fun SezioneHeatmap(
     giornoSel: Int,
     fasciaConsigliata: Int?
 ) {
+    //Ordine dei giorni da mostrare: parte da oggi
     val ordine = giorniDaOggi(todayDow)
     val labels = ordine.map { LABEL_GIORNI[it] }
 
+    //Aggrega le righe DTO in una mappa (giorno,ora) → totale occupazioni.
     val mappaAggregata = remember(rows) {
         rows.groupBy { it.giorno_settimana to it.ora }
             .mapValues { (_, list) -> list.sumOf { it.occupazioni_totali } }
     }
+
     val maxTot = mappaAggregata.values.maxOrNull()?.coerceAtLeast(1) ?: 1
 
     Card(Modifier.fillMaxWidth()) {
@@ -58,6 +63,8 @@ internal fun SezioneHeatmap(
     }
 }
 
+//Griglia vera e propria: una riga per ogni ora di apertura, una colonna per ogni giorno.
+//Ogni cella è un Box colorato in base al rapporto occupazioni/maxTot.
 @Composable
 private fun HeatmapGrid(
     mappaAggregata: Map<Pair<Int, Int>, Int>,
@@ -71,6 +78,7 @@ private fun HeatmapGrid(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
 
+        //Riga di intestazione: nomi dei giorni
         Row(verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.width(26.dp))
             labels.forEachIndexed { idx, l ->
@@ -81,18 +89,21 @@ private fun HeatmapGrid(
                     fontSize = 10.sp,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
+                    //Oggi in grassetto e blu per distinguerlo dagli altri giorni
                     fontWeight = if (isOggi) FontWeight.ExtraBold else FontWeight.Bold,
                     color = if (isOggi) COL_ADESSO else Color.Unspecified
                 )
             }
         }
 
+        //Una riga per ogni ora di apertura
         StatsConfig.ORE_APERTURA.forEach { h ->
             val isOraCorrente = (h == oraCorrente)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    //Sfondo azzurrino dietro la riga dell'ora corrente
                     .then(
                         if (isOraCorrente)
                             Modifier
@@ -105,14 +116,16 @@ private fun HeatmapGrid(
                     "$h",
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.width(26.dp),
+                    //Ora corrente in grassetto e blu anche sulla label
                     fontWeight = if (isOraCorrente) FontWeight.ExtraBold else FontWeight.Normal,
                     color = if (isOraCorrente) COL_ADESSO else Color.Unspecified
                 )
+                //Una cella per ogni giorno
                 ordine.forEach { dow ->
                     val n = mappaAggregata[dow to h] ?: 0
                     val occ = (n.toFloat() / maxTot).coerceIn(0f, 1f)
 
-                    // Bordo sulla fascia consigliata del giorno scelto (non più solo di oggi)
+                    //Cella "fascia consigliata"
                     val isConsigliata = dow == giornoSel && fasciaConsigliata == h
 
                     val coloreBordo = MaterialTheme.colorScheme.primary
@@ -124,7 +137,6 @@ private fun HeatmapGrid(
                             .padding(1.dp)
                     ) {
                         if (isConsigliata) {
-                            // Bordo spesso + gap interno per staccare dal colore della cella
                             Box(
                                 Modifier
                                     .fillMaxSize()
@@ -146,6 +158,7 @@ private fun HeatmapGrid(
     }
 }
 
+//Legenda della scala cromatica: barra da 11 riquadri (0..10) + etichette "Bassa/Media/Alta".
 @Composable
 private fun LegendaHeatmap() {
     Column(

@@ -13,8 +13,10 @@ import com.example.seatfinder.ui.theme.SeatFinderTheme
 import androidx.core.content.ContextCompat
 import com.example.seatfinder.ui.main.MainAppScreen
 
+//Activity dell'app dopo il login e monta il MainAppScreen
 class MainActivity : ComponentActivity() {
 
+    //Permesso notifiche, se negato, PingService non può mostrare avvisi
     private val requestNotificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -23,6 +25,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    //Posizione in background: serve al PingService per controllare la distanza anche con app chiusa
     private val requestBackgroundLocationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -31,6 +34,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Posizione in foreground
     private val requestForegroundLocationPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { risultati ->
@@ -53,7 +57,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
+    //Cosa chiediamo e in che ordine:
+    //Posizione precisa, perché senza di essa niente PingService
+    //Poi la posizione in background , che il sistema concede solo se hai già dato quella precisa
+    //Le notifiche, per gli avvisi di allontanamento
     private fun richiediPermessi() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(

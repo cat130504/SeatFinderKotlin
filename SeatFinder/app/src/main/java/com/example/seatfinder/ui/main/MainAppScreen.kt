@@ -31,21 +31,26 @@ import com.example.seatfinder.ui.qr.QrScreen
 import com.example.seatfinder.ui.stats.ProfileStatsScreen
 import com.example.seatfinder.ui.stats.StatsScreen
 
+//Collega UI con MainViewModel, costruisce la schermata "principale".Punto in cui si incontrano tutte le schermate delle fasi successive
 @Composable
 fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
     val context = LocalContext.current
     val navController = rememberNavController()
 
+    //Stato osservato dal MainViewModel
     val tavoloAttuale by viewModel.tavoloAttuale.collectAsState()
     val infoTavolo by viewModel.infoTavolo.collectAsState()
     val edifici by viewModel.edifici.collectAsState()
     val selezione by viewModel.selezione.collectAsState()
     val ready by viewModel.ready.collectAsState()
+
+    //Route corrente: serve a bottom bar e a capire quando mostrare i FAB della mappa
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     var showProfileDialog by remember { mutableStateOf(false) }
 
+    //Immagine della planimetria in base a edificio+quota scelti
     val mapDrawable = remember(selezione.edificio, selezione.quota) {
         val edificio = selezione.edificio
         val quota = selezione.quota
@@ -53,6 +58,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         else R.drawable.q155
     }
 
+    //Voci dei due FAB (edifici a sinistra, piani a destra)
     val opzioniEdifici = remember(edifici) {
         generaOpzioniEdifici(edifici, viewModel::selezionaEdificio)
     }
@@ -60,6 +66,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         generaOpzioniPiani(selezione.piani, viewModel::selezionaPiano)
     }
 
+    //Accende/spegne il PingService in base al tavolo attuale.
     LaunchedEffect(tavoloAttuale) {
         val id = tavoloAttuale
         if (id != null) {
@@ -69,6 +76,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         }
     }
 
+    //Dialog di conferma logout
     if (showProfileDialog) {
         ProfileDialog(
             nome = SessionManager.nome ?: SessionManager.iniziali ?: "Utente",
@@ -80,7 +88,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         )
     }
 
-    // ---- GATE GLOBALE: aspetta il caricamento iniziale ----
+    //Finché il caricamento iniziale non è finito, solo spinner
     if (!ready) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -101,6 +109,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
         bottomBar = {
             AppBottomBar(
                 currentRoute = currentRoute,
+                //QR disabilitato se hai già un tavolo occupato
                 scanEnabled = tavoloAttuale == null,
                 onDestinationClick = { destination ->
                     navController.navigate(destination.route) {
@@ -124,7 +133,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 composable(Destination.MAP.route) {
-                    // ---- GATE LOCALE: mappa solo con edificio+quota noti ----
+                    //GATE LOCALE: la mappa si disegna solo con edificio+quota noti
                     val edificio = selezione.edificio
                     val quota = selezione.quota
                     if (edificio != null && quota != null) {
@@ -147,6 +156,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                 composable(Destination.QR.route) {
                     QrScreen(
                         onSuccessOccupazione = { idTavolo, lat, lng ->
+                            //QR letto: salva tavolo e coordinate, poi torna alla mappa
                             viewModel.onTavoloOccupato(idTavolo, lat, lng)
                             navController.navigate(Destination.MAP.route) {
                                 popUpTo(Destination.MAP.route) { inclusive = true }
@@ -156,11 +166,11 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
                 }
             }
 
+            //Solo sulla mappa: badge edificio/piano in alto e i due FAB in basso
             if (currentRoute == Destination.MAP.route) {
                 val edificio = selezione.edificio
                 val quota = selezione.quota
 
-                // PlanBadge solo se abbiamo davvero edificio+quota
                 if (edificio != null && quota != null) {
                     PlanBadge(
                         planName = "Edificio: ${edificio.nome}   Piano: $quota",

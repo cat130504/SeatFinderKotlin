@@ -12,13 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
+//Una voce del FAB espandibile: icona, etichetta e azione da eseguire al click
 data class FabOption(
     val icon: ImageVector,
     val label: String,
     val onClick: () -> Unit
 )
 
-
+//FAB espandibile con più opzioni (una per ogni edificio o piano).
 @Composable
 fun ExpandableFabMenu(
     options: List<FabOption>,
@@ -26,6 +27,7 @@ fun ExpandableFabMenu(
     alignment: Alignment.Horizontal = Alignment.End
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+
     val labelDopoBottone = alignment == Alignment.Start
 
     Box(modifier = modifier) {
@@ -34,6 +36,7 @@ fun ExpandableFabMenu(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
 
+            //Le opzioni appaiono/scompaiono con fade + slide verticale
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = fadeIn() + slideInVertically { it },
@@ -50,6 +53,7 @@ fun ExpandableFabMenu(
                         ) {
                             if (!labelDopoBottone) OptionLabel(option.label)
 
+                            //Al click: esegue l'azione e richiude il menu
                             SmallFloatingActionButton(
                                 onClick = {
                                     option.onClick()
@@ -66,6 +70,7 @@ fun ExpandableFabMenu(
                 }
             }
 
+            //FAB principale: cambia icona in base allo stato
             FloatingActionButton(
                 onClick = { isExpanded = !isExpanded }
             ) {
@@ -78,6 +83,7 @@ fun ExpandableFabMenu(
     }
 }
 
+//Etichetta dell'opzione: piccola Surface con ombra, così resta leggibile anche sopra la planimetria
 @Composable
 private fun OptionLabel(text: String) {
     Surface(

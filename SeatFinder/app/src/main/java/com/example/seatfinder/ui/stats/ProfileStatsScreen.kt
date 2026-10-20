@@ -44,6 +44,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.runtime.collectAsState
 
+//Schermata "Profilo": statistiche personali dell'utente loggato.
 @Composable
 fun ProfileStatsScreen(
     modifier: Modifier = Modifier,
@@ -51,13 +52,16 @@ fun ProfileStatsScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
+    //Caricamento automatico al primo ingresso in schermata
     LaunchedEffect(Unit) {
         viewModel.carica()
     }
 
     when {
+        //Spinner a tutto schermo al primo caricamento
         state.loading -> Box(modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator() }
 
+        //Errore con dati assenti: messaggio + bottone Riprova
         state.errore -> Box(modifier.fillMaxSize(), Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Impossibile caricare le statistiche")
@@ -66,6 +70,7 @@ fun ProfileStatsScreen(
             }
         }
 
+        //Nessuna occupazione: messaggio "vuoto"
         state.occupazioni.isEmpty() -> Box(modifier.fillMaxSize().padding(24.dp), Alignment.Center) {
             Text(
                 "Non hai ancora occupato nessun tavolo",
@@ -73,6 +78,7 @@ fun ProfileStatsScreen(
             )
         }
 
+        //Caso normale: le quattro sezioni in colonna scrollabile
         else -> Column(
             modifier = modifier
                 .fillMaxSize()
@@ -88,16 +94,17 @@ fun ProfileStatsScreen(
     }
 }
 
-// ---------- helper ----------
 
+//Giorno della settimana
 private fun OccupazioneUtente.dow(): Int =
     Calendar.getInstance().apply { timeInMillis = inizio }.get(Calendar.DAY_OF_WEEK) - 1
 
+//Ora del giorno di un'occupazione
 private fun OccupazioneUtente.ora(): Int =
     Calendar.getInstance().apply { timeInMillis = inizio }.get(Calendar.HOUR_OF_DAY)
 
-// ---------- 1. Riepilogo ----------
-
+//Sezione con quattro "tessere": occupazioni totali, giorno preferito, fascia preferita, piano preferito.
+//I "preferiti" sono il valore con più occorrenze
 @Composable
 private fun SezioneRiepilogo(occ: List<OccupazioneUtente>) {
     val giornoTop = remember(occ) {
@@ -125,6 +132,7 @@ private fun SezioneRiepilogo(occ: List<OccupazioneUtente>) {
     }
 }
 
+//Singola "tessera" del riepilogo: etichetta piccola sopra, valore grande sotto.
 @Composable
 private fun Tessera(label: String, valore: String, modifier: Modifier = Modifier) {
     Surface(
@@ -141,12 +149,15 @@ private fun Tessera(label: String, valore: String, modifier: Modifier = Modifier
 
 // ---------- 2. Heatmap personale ----------
 
+//Heatmap giorni × ore delle OCCUPAZIONI dell'utente
 @Composable
 private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
     val todayDow = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1 }
     val ordine = remember(todayDow) { giorniDaOggi(todayDow) }
 
+    //(giorno, ora) → quante volte l'utente ha occupato
     val mappa = remember(occ) { occ.groupingBy { it.dow() to it.ora() }.eachCount() }
+    //Massimo per normalizzare i colori
     val maxN = mappa.values.maxOrNull()?.coerceAtLeast(1) ?: 1
 
     Card(Modifier.fillMaxWidth()) {
@@ -154,6 +165,7 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
             Text("Le tue fasce di occupazione", style = MaterialTheme.typography.titleMedium)
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                //Intestazione giorni (oggi in grassetto e blu)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Spacer(Modifier.width(26.dp))
                     ordine.forEach { dow ->
@@ -169,6 +181,7 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                         )
                     }
                 }
+                //Una riga per ogni ora di apertura
                 StatsConfig.ORE_APERTURA.forEach { h ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -179,8 +192,8 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
                         ordine.forEach { dow ->
                             val n = mappa[dow to h] ?: 0
 
-                            // Celle senza occupazioni: neutro visibile + bordo sottile
-                            // Celle con occupazioni: scala cromatica, senza bordo
+                            //Celle senza occupazioni: grigio neutro con bordo sottile
+                            //Celle con occupazioni: scala cromatica, senza bordo
                             val colore = if (n == 0) COL_VUOTA.copy(alpha = 0.35f)
                             else coloreOccupazione(n.toFloat() / maxN)
 
@@ -207,6 +220,7 @@ private fun SezioneHeatmapProfilo(occ: List<OccupazioneUtente>) {
     }
 }
 
+//Legenda della heatmap personale: prima cella grigia ("Nessuna")
 @Composable
 private fun LegendaHeatmapProfilo() {
     Column(
@@ -221,7 +235,7 @@ private fun LegendaHeatmapProfilo() {
                 .height(12.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // Cella grigia = nessuna occupazione (stessa resa delle celle vuote della griglia)
+            //Cella grigia = nessuna occupazione
             Box(
                 Modifier
                     .weight(1f)
@@ -233,7 +247,7 @@ private fun LegendaHeatmapProfilo() {
                         shape = RoundedCornerShape(2.dp)
                     )
             )
-            // Gradiente continuo (stessa scala usata nelle celle della heatmap)
+            //Gradiente continuo
             (0..10).forEach { i ->
                 Box(
                     Modifier
@@ -255,14 +269,15 @@ private fun LegendaHeatmapProfilo() {
     }
 }
 
-// ---------- 3. Luoghi più usati ----------
-
+//Classifica (edificio, quota) per numero di occupazioni.
+//La barra orizzontale è proporzionale al conteggio rispetto al primo classificato.
 @Composable
 private fun SezioneLuoghi(occ: List<OccupazioneUtente>) {
     val luoghi = remember(occ) {
         occ.groupingBy { it.edificioNome to it.quota }.eachCount()
             .entries.sortedByDescending { it.value }
     }
+    //Massimo = il primo
     val maxN = luoghi.firstOrNull()?.value ?: 1
 
     Card(Modifier.fillMaxWidth()) {
@@ -278,6 +293,7 @@ private fun SezioneLuoghi(occ: List<OccupazioneUtente>) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    //Barra di sfondo + barra colorata
                     Box(
                         Modifier
                             .fillMaxWidth()
@@ -297,10 +313,10 @@ private fun SezioneLuoghi(occ: List<OccupazioneUtente>) {
     }
 }
 
-// ---------- 4. Ultime occupazioni ----------
-
+//Lista delle 10 occupazioni più recenti, con data/ora e nome del luogo.
 @Composable
 private fun SezioneUltime(occ: List<OccupazioneUtente>) {
+    //Formato data italiano, riusato per tutte le righe
     val formato = remember { SimpleDateFormat("dd/MM · HH:mm", Locale.ITALY) }
     val ultime = remember(occ) { occ.sortedByDescending { it.inizio }.take(10) }
 
@@ -322,6 +338,7 @@ private fun SezioneUltime(occ: List<OccupazioneUtente>) {
                         )
                     }
                 }
+                //Divisorio fra una riga e l'altra
                 HorizontalDivider()
             }
         }

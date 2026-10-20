@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 
+//Dialog di conferma logout, aperto dal cerchio con le iniziali nella top bar.Riceve il nome da mostrare
 @Composable
 fun ProfileDialog(
     nome: String,

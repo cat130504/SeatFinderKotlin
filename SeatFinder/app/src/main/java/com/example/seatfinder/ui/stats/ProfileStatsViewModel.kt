@@ -34,26 +34,27 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+//Stato osservato da ProfileStatsScreen
 data class ProfileStatsUiState(
     val loading: Boolean = true,
     val errore: Boolean = false,
     val occupazioni: List<OccupazioneUtente> = emptyList()
 )
 
+//"Cassetto" delle statistiche personali: carica le occupazioni dell'utente loggato
 class ProfileStatsViewModel : ViewModel() {
     private val _state = MutableStateFlow(ProfileStatsUiState())
     val state: StateFlow<ProfileStatsUiState> = _state.asStateFlow()
 
+    //Carica le occupazioni dell'utente corrente.
     fun carica() {
         viewModelScope.launch {
-            // spinner solo al primo caricamento, poi aggiornamento silenzioso
             _state.update { it.copy(loading = it.occupazioni.isEmpty(), errore = false) }
             try {
                 val lista = StatsRepository.getOccupazioniUtente(SessionManager.userId)
                 _state.update { it.copy(occupazioni = lista, loading = false) }
             } catch (e: Exception) {
                 Log.e("ProfileStats", "Errore caricamento", e)
-                // se ho già dei dati li tengo, mostro l'errore solo a schermata vuota
                 _state.update { it.copy(loading = false, errore = it.occupazioni.isEmpty()) }
             }
         }

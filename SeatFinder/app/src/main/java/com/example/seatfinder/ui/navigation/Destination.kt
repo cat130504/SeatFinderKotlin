@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.Person
 
+//Sezioni in cui può entrare l'app dalla bottom bar.
 enum class Destination(
     val route: String,
     val label: String,

@@ -7,6 +7,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
+//DTO per l'INSERT di un'occupazione: rispecchia i campi della tabella "occupazione"
 @Serializable
 data class OccupazioneInsert(
     val id_utente: Int,
@@ -16,16 +17,19 @@ data class OccupazioneInsert(
     val lng_occupazione: Double? = null
 )
 
+//Solo l'id: usato per chiudere un'occupazione aperta
 @Serializable
 data class OccupazioneIdDto(
     val id: Int
 )
 
+//Solo id_tavolo: usato per sapere quale tavolo sta occupando l'utente
 @Serializable
 data class OccupazioneTavoloDto(
     val id_tavolo: Int
 )
 
+//Riga completa di occupazione con il tavolo annidato (piano + edificio).
 @Serializable
 data class OccupazioneUtenteDto(
     val id_tavolo: Int,
@@ -35,6 +39,7 @@ data class OccupazioneUtenteDto(
     val tavolo: TavoloInfoResponse
 )
 
+//DTO → domain: la UI lavora con OccupazioneUtente, non con il DTO.
 fun OccupazioneUtenteDto.toDomain() = OccupazioneUtente(
     tavoloId = id_tavolo,
     edificioNome = tavolo.piano.edificio.nome,
@@ -44,10 +49,10 @@ fun OccupazioneUtenteDto.toDomain() = OccupazioneUtente(
     lng = lng_occupazione
 )
 
+//Parsa la data di occupazione
 private fun parseTimestamp(s: String): Long = try {
     OffsetDateTime.parse(s).toInstant().toEpochMilli()
 } catch (e: DateTimeParseException) {
-    // colonna senza fuso orario: la interpreto come ora locale del telefono
     LocalDateTime.parse(s.replace(' ', 'T'))
         .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
