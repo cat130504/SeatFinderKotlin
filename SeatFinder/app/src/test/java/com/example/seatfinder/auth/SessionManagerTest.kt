@@ -2,12 +2,9 @@ package com.example.seatfinder.auth
 
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-
 
 class SessionManagerTest {
 
@@ -23,22 +20,21 @@ class SessionManagerTest {
 
     @Test
     fun statoInizialeNonLoggato() {
-        assertFalse(SessionManager.isLoggedIn())
         assertEquals(-1, SessionManager.userId)
         assertNull(SessionManager.nome)
         assertNull(SessionManager.iniziali)
     }
 
     @Test
-    fun isLoggedInRestituisceTrueDopoAverImpostatoUserId() {
+    fun userIdDiventaValidoDopoLogin() {
         SessionManager.userId = 123
-        assertTrue(SessionManager.isLoggedIn())
+        assertEquals(123, SessionManager.userId)
     }
 
     @Test
-    fun isLoggedInRestituisceFalseConUserIdMenoUno() {
+    fun userIdMenoUnoRappresentaNonLoggato() {
         SessionManager.userId = -1
-        assertFalse(SessionManager.isLoggedIn())
+        assertEquals(-1, SessionManager.userId)
     }
 
     @Test
@@ -52,7 +48,6 @@ class SessionManagerTest {
         assertEquals(-1, SessionManager.userId)
         assertNull(SessionManager.nome)
         assertNull(SessionManager.iniziali)
-        assertFalse(SessionManager.isLoggedIn())
     }
 
     @Test

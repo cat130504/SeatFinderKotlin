@@ -11,8 +11,7 @@ object AuthManager {
 
     private const val PREFS_NAME = "LoginPrefs"
     private const val KEY_USER_ID = "userId"
-    private const val KEY_NOME = "iniziali"
-
+    private const val KEY_NOME = "nome"
     private const val KEY_INIZIALI = "iniziali"
     private const val KEY_EXPIRE_TIME = "expireTime"
 
