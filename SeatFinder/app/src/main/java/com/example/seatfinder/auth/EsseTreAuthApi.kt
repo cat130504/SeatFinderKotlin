@@ -53,7 +53,8 @@ object EsseTreAuthApi {
                                     id = user.getString("id").toInt(),
                                     //Iniziali: prima lettera nome + prima lettera cognome.
                                     iniziali = "${user.getString("firstName").first()}" +
-                                            "${user.getString("lastName").first()}"
+                                            "${user.getString("lastName").first()}",
+                                    nome = "${user.getString("firstName").first()}"
                                 )
                             )
                         }

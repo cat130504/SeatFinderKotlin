@@ -17,19 +17,24 @@ data class OccupazioneInsert(
     val lng_occupazione: Double? = null
 )
 
+data class TavoloUtente(val id: Int, val lat: Double?, val lng: Double?)
 //Solo l'id: usato per chiudere un'occupazione aperta
 @Serializable
 data class OccupazioneIdDto(
-    val id: Int
+    val id: Int,
+    val lat_occupazione: Double? = null,
+    val lng_occupazione: Double? = null
 )
 
-//Solo id_tavolo: usato per sapere quale tavolo sta occupando l'utente
+//Lat/lng/id tavolo occupato
 @Serializable
 data class OccupazioneTavoloDto(
-    val id_tavolo: Int
+    val id_tavolo: Int,
+    val lat_occupazione: Double? = null,
+    val lng_occupazione: Double? = null
 )
 
-//Riga completa di occupazione con il tavolo annidato (piano + edificio).
+//Riga completa di occupazione con il tavolo annidato (piano + edificio). Usato per stats
 @Serializable
 data class OccupazioneUtenteDto(
     val id_tavolo: Int,

@@ -8,6 +8,7 @@ import com.example.seatfinder.data.remote.dto.Edificio
 import com.example.seatfinder.data.remote.dto.PianoQuota
 import com.example.seatfinder.data.repository.EdificioRepository
 import com.example.seatfinder.data.repository.TavoloRepository
+import com.example.seatfinder.service.PingService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,9 +62,10 @@ class MainViewModel : ViewModel() {
         //Caricamento iniziale: recupera il tavolo già occupato (se c'è) e gli edifici
         viewModelScope.launch {
             try {
-                TavoloRepository.setTavolo(
-                    TavoloRepository.getTavoloUtente(SessionManager.userId)
-                )
+                val tavolo = TavoloRepository.getTavoloUtente(SessionManager.userId)
+                tavoloLat = tavolo?.lat
+                tavoloLng = tavolo?.lng
+                TavoloRepository.setTavolo(tavolo?.id) //inizializza anche il controllo di posizione
                 caricaEdifici()
             } finally {
                 _ready.value = true
