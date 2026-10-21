@@ -201,25 +201,27 @@ class _QrScreenState extends State<QrScreen> {
       children: [
         MobileScanner(controller: _scanner, onDetect: _onDetect, fit: BoxFit.cover),
         const ScannerOverlay(),
-        // Testo guida posizionato sotto il riquadro di scansione
+
         Center(
           child: Transform.translate(
-            offset: const Offset(0, 130 + 28),
-            child: const Text(
-              'Inquadra il QR code del tavolo',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ),
-        //pulsante in basso per accendere o spegnere la torcia
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 40),
-            child: IconButton(
-              onPressed: _toggleTorch,
-              tooltip: _torchOn ? 'Spegni torcia' : 'Accendi torcia',
-              icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off, color: Colors.white),
+            offset: const Offset(0, 130 + 48),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Inquadra il QR code del tavolo',
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 12), //spazio tra testo e icona
+                IconButton(
+                  onPressed: _toggleTorch,
+                  tooltip: _torchOn ? 'Spegni torcia' : 'Accendi torcia',
+                  icon: Icon(
+                    _torchOn ? Icons.flash_on : Icons.flash_off,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

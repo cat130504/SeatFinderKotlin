@@ -69,8 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final screenSize = MediaQuery.sizeOf(context);
+    final screenHeight = screenSize.height;
+    // Altezza della tastiera (0 quando è chiusa, >0 quando è aperta)
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
 
     OutlineInputBorder border = const OutlineInputBorder();
     final fieldDecoration = InputDecoration(
@@ -81,68 +83,71 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Sfondo fisso (assets/images/login.png)
-          Image.asset(
-            'assets/images/login.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                ColoredBox(color: Theme.of(context).colorScheme.primary),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(40, 0, 40, keyboard),
-              child: Column(
-                children: [
-                  //spaziatore verticale per posizionare i campi di testo in maniera corretta
-                  SizedBox(height: screenHeight * 0.46),
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(0, -keyboardHeight * 0.75, 0),
+        width: screenSize.width,
+        height: screenHeight,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/images/login.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  ColoredBox(color: Theme.of(context).colorScheme.primary),
+            ),
 
-                  //campi di testo matricola/pwd
-                  TextField(
-                    controller: _matricola,
-                    enabled: !_loading,
-                    textInputAction: TextInputAction.next,
-                    decoration: fieldDecoration.copyWith(labelText: 'Matricola'),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _password,
-                    enabled: !_loading,
-                    obscureText: true,
-                    keyboardType: TextInputType.visiblePassword,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) {
-                      if (_canLogin) _login();
-                    },
-                    decoration: fieldDecoration.copyWith(labelText: 'Password'),
-                  ),
-                  const SizedBox(height: 24),
-                  //bottone login
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: FilledButton(
-                      onPressed: _canLogin ? _login : null,
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('Login'),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Column(
+                  children: [
+                    SizedBox(height: screenHeight * 0.46),
+
+                    TextField(
+                      controller: _matricola,
+                      enabled: !_loading,
+                      textInputAction: TextInputAction.next,
+                      decoration: fieldDecoration.copyWith(labelText: 'Matricola'),
                     ),
-                  ),
-                  //se loading é true mostra la barra circolare di caricamento
-                  if (_loading) ...[
                     const SizedBox(height: 16),
-                    const CircularProgressIndicator(),
+                    TextField(
+                      controller: _password,
+                      enabled: !_loading,
+                      obscureText: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        if (_canLogin) _login();
+                      },
+                      decoration: fieldDecoration.copyWith(labelText: 'Password'),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: FilledButton(
+                        onPressed: _canLogin ? _login : null,
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Login'),
+                      ),
+                    ),
+                    if (_loading) ...[
+                      const SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                    ],
                   ],
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

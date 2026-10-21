@@ -20,7 +20,7 @@ class PingConfig {
   //Sostituisce onTaskRemoved (SECONDI_GRAZIA = 15 s): la UI invia un
   //"heartbeat" ogni 5 s; se non ne arrivano più per questo tempo l'app
   //è considerata chiusa e il tavolo viene liberato.
-  static const timeoutAppChiusa = Duration(seconds: 45);
+  static const timeoutAppChiusa = Duration(seconds: 15);
 
   static const btnMantieni = 'mantieni';
   static const btnLibera = 'libera';
@@ -32,7 +32,7 @@ void startPingCallback() {
   FlutterForegroundTask.setTaskHandler(PingTaskHandler());
 }
 
-//Gira in un isolate separato, dentro il foreground service Android.
+//gira in un isolate separato, dentro il foreground service Android.
 //gestore del task in background che esegue controlli periodici sulla posizione e gestisce i timeout di allontanamento
 class PingTaskHandler extends TaskHandler {
   TavoloRepository? _repo;
