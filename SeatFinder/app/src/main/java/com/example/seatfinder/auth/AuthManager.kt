@@ -11,6 +11,8 @@ object AuthManager {
 
     private const val PREFS_NAME = "LoginPrefs"
     private const val KEY_USER_ID = "userId"
+    private const val KEY_NOME = "iniziali"
+
     private const val KEY_INIZIALI = "iniziali"
     private const val KEY_EXPIRE_TIME = "expireTime"
 
@@ -26,6 +28,7 @@ object AuthManager {
         val p = prefs(context)
         val userId = p.getInt(KEY_USER_ID, -1)
         val iniziali = p.getString(KEY_INIZIALI, null)
+        val nome = p.getString(KEY_NOME, null)
         val expire = p.getLong(KEY_EXPIRE_TIME, 0L)
 
         if (userId == -1 || iniziali == null || System.currentTimeMillis() >= expire) {
@@ -33,6 +36,7 @@ object AuthManager {
         }
         SessionManager.userId = userId
         SessionManager.iniziali = iniziali
+        SessionManager.nome = nome
         return true
     }
 
@@ -41,10 +45,12 @@ object AuthManager {
         prefs(context).edit()
             .putInt(KEY_USER_ID, user.id)
             .putString(KEY_INIZIALI, user.iniziali)
+            .putString(KEY_NOME, user.nome)
             .putLong(KEY_EXPIRE_TIME, System.currentTimeMillis() + SESSION_DURATION_MS)
             .apply()
         SessionManager.userId = user.id
         SessionManager.iniziali = user.iniziali
+        SessionManager.nome=user.nome
     }
 
     //Logout: pulisce memoria e disco, ferma il PingService e riapre il LoginActivity

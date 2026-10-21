@@ -6,8 +6,10 @@ import com.example.seatfinder.data.remote.SupabaseClient
 import com.example.seatfinder.data.remote.dto.OccupazioneIdDto
 import com.example.seatfinder.data.remote.dto.OccupazioneInsert
 import com.example.seatfinder.data.remote.dto.OccupazioneTavoloDto
+import com.example.seatfinder.data.remote.dto.OccupazioneUtenteDto
 import com.example.seatfinder.data.remote.dto.TavoloDto
 import com.example.seatfinder.data.remote.dto.TavoloUpdate
+import com.example.seatfinder.data.remote.dto.TavoloUtente
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
@@ -167,7 +169,7 @@ object TavoloRepository {
     }
 
     //Id del tavolo attualmente occupato dall'utente, o null se non ne occupa nessuno
-    suspend fun getTavoloUtente(idUtente: Int): Int? {
+    suspend fun getTavoloUtente(idUtente: Int): TavoloUtente? {
         return try {
             val result = withContext(Dispatchers.IO) {
                 SupabaseClient.client
@@ -180,7 +182,9 @@ object TavoloRepository {
                     }
                     .decodeList<OccupazioneTavoloDto>()
             }
-            result.firstOrNull()?.id_tavolo
+            result.firstOrNull()?.let {
+                TavoloUtente(it.id_tavolo, it.lat_occupazione, it.lng_occupazione)
+            }
         } catch (e: Exception) {
             Log.e("DB_ERROR", "Errore recupero tavolo utente: ${e.message}")
             null

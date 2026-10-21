@@ -30,13 +30,13 @@ fun TavoloDialog(tavolo: Tavolo, onDismissRequest: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Tavolo ${tavolo.id}",
+                    text = "Tavolo N°${tavolo.id}",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(text = "Posti Totali: ${tavolo.posti}")
-                Text(text = "Presa elettrica: ${if (tavolo.presa) "Presente" else "Assente"}")
                 Text(text = "Posti Disponibili: ${tavolo.postiDisponibili}")
+                Text(text = "Presa elettrica: ${if (tavolo.presa) "Presente" else "Assente"}")
             }
         }
     }
