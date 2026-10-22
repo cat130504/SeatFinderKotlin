@@ -29,7 +29,7 @@ class StatsCalcoloTest {
     }
 
     @Test
-    fun calcolaFasciaConsigliataScegleLoraConMenoOccupazioni() {
+    fun calcolaFasciaConsigliataSelezionaOraConMenoOccupazioni() {
         val rows = listOf(
             row(1, 9, 10),
             row(1, 10, 2),
