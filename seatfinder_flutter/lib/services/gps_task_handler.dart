@@ -10,7 +10,7 @@ import '../data/tavolo_repository.dart';
 
 //Costanti (stesse del PingService Kotlin).
 // classe di configurazione statica contenente i parametri e le soglie per il servizio di monitoraggio in background
-class PingConfig {
+class GpsConfig {
   static const channelId = 'ping_tavolo_channel';
   static const distanzaMassimaMetri = 50.0;
   static const intervalloControlloMs = 5000;
@@ -97,7 +97,7 @@ class PingTaskHandler extends TaskHandler {
       final now = DateTime.now();
 
       // App chiusa (nessun heartbeat) -> libera
-      if (now.difference(_ultimoHeartbeat) > PingConfig.timeoutAppChiusa) {
+      if (now.difference(_ultimoHeartbeat) > GpsConfig.timeoutAppChiusa) {
         await _libera(PingMotivo.appChiusa);
         return;
       }
@@ -137,7 +137,7 @@ class PingTaskHandler extends TaskHandler {
           latAncora, lngAncora, pos.latitude, pos.longitude);
       debugPrint('DEBUG_LOC Distanza dal tavolo: $distanza metri');
 
-      if (distanza > PingConfig.distanzaMassimaMetri) {
+      if (distanza > GpsConfig.distanzaMassimaMetri) {
         await _avviaProceduraAllontanamento();
       }
     } catch (e) {
@@ -152,7 +152,7 @@ class PingTaskHandler extends TaskHandler {
 
     _notificaInCorso = true;
     _scadenzaRisposta =
-        DateTime.now().add(PingConfig.timeoutRispostaAllontanamento);
+        DateTime.now().add(GpsConfig.timeoutRispostaAllontanamento);
 
     await FlutterForegroundTask.updateService(
       notificationTitle: 'Ti sei allontanato dal tavolo!',
@@ -160,11 +160,11 @@ class PingTaskHandler extends TaskHandler {
       'Vuoi mantenere il posto? Verrà liberato tra 10 minuti se non rispondi.',
       notificationButtons: const [
         NotificationButton(
-          id: PingConfig.btnMantieni,
+          id: GpsConfig.btnMantieni,
           text: 'Mantieni (+10 min)',
         ),
         NotificationButton(
-          id: PingConfig.btnLibera,
+          id: GpsConfig.btnLibera,
           text: 'Libera',
         ),
       ],
@@ -177,7 +177,7 @@ class PingTaskHandler extends TaskHandler {
     _scadenzaRisposta = null;
     _notificaInCorso = false;
     _inPausa = true;
-    _finePausa = DateTime.now().add(PingConfig.durataProroga);
+    _finePausa = DateTime.now().add(GpsConfig.durataProroga);
     _ripristinaNotificaNormale();
   }
 
@@ -246,9 +246,9 @@ class PingTaskHandler extends TaskHandler {
   @override
   // gestisce la pressione dei pulsanti interattivi presenti all'interno della notifica del servizio in primo piano
   void onNotificationButtonPressed(String id) {
-    if (id == PingConfig.btnMantieni) {
+    if (id == GpsConfig.btnMantieni) {
       _mantieni();
-    } else if (id == PingConfig.btnLibera) {
+    } else if (id == GpsConfig.btnLibera) {
       debugPrint('DEBUG_LOC L\'utente ha scelto di liberare il tavolo');
       unawaited(_libera(PingMotivo.manuale));
     }

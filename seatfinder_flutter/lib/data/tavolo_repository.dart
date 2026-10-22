@@ -34,18 +34,37 @@ class TavoloRepository {
       await _db.from('occupazione').insert({
         'id_utente': idUtente,
         'id_tavolo': idTavolo,
-        // UTC con "Z": istante corretto indipendentemente dal fuso del telefono
         'data_occupazione': DateTime.now().toLocal().toIso8601String(),
         'lat_occupazione': lat,
         'lng_occupazione': lng,
       });
       await _db.from('tavolo').update({'is_occupato': true}).eq('id', idTavolo);
       await _db.rpc('decPostiTavolo', params: {'tavolo_id': idTavolo});
-
       return true;
     } catch (e) {
       debugPrint('DB_ERROR Errore occupazione tavolo: $e');
       return false;
+    }
+  }
+
+  Future<({int id, double? lat, double? lng})?> getOccupazioneAperta(
+      int idUtente) async {
+    try {
+      final rows = await _db
+          .from('occupazione')
+          .select('id_tavolo, lat_occupazione, lng_occupazione')
+          .eq('id_utente', idUtente)
+          .isFilter('data_liberazione', null);
+      if (rows.isEmpty) return null;
+      final r = rows.first;
+      return (
+      id: (r['id_tavolo'] as num).toInt(),
+      lat: (r['lat_occupazione'] as num?)?.toDouble(),
+      lng: (r['lng_occupazione'] as num?)?.toDouble(),
+      );
+    } catch (e) {
+      debugPrint('DB_ERROR Errore recupero occupazione aperta: $e');
+      return null;
     }
   }
 
@@ -114,6 +133,22 @@ class TavoloRepository {
     } catch (e) {
       debugPrint('DB_ERROR Errore recupero posti liberi: $e');
       return -1;
+    }
+  }
+
+  Future<bool?> pingOccupazione(int idTavolo, int idUtente) async {
+    try {
+      final righe = await _db
+          .from('occupazione')
+          .update({'ultimo_ping': DateTime.now().toLocal().toIso8601String()})
+          .eq('id_tavolo', idTavolo)
+          .eq('id_utente', idUtente)
+          .isFilter('data_liberazione', null)
+          .select('id');
+      return righe.isNotEmpty;
+    } catch (e) {
+      debugPrint('DB_ERROR Errore ping occupazione: $e');
+      return null;
     }
   }
 }

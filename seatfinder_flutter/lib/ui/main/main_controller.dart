@@ -8,7 +8,7 @@ import '../../core/supabase_client.dart';
 import '../../data/edificio_repository.dart';
 import '../../data/tavolo_repository.dart';
 import '../../domain/models.dart';
-import '../../services/ping_service.dart';
+import '../../services/gps_service.dart';
 
 //classe map selezione per rappresentare lo stato attuale della mappa con caratteristica edificio e quota
 class MapSelezione {
@@ -30,6 +30,7 @@ class MainController extends ChangeNotifier {
   //ottiene tutti i tavoli e gli edifici
   final _tavoli = TavoloRepository(AppSupabase.client);
   final _edificiRepo = EdificioRepository(AppSupabase.client);
+  Timer? _heartbeatTimer;
 
 
   //dichiarazione dello stato reattivo
@@ -52,8 +53,10 @@ class MainController extends ChangeNotifier {
   //verifica se l'utente ha gia un tavolo occupato e carica i dati dal database
   Future<void> _init() async {
     try {
-      final id = await _tavoli.getTavoloUtente(SessionManager.instance.userId);
-      await _setTavolo(id);
+      final occ = await _tavoli.getOccupazioneAperta(SessionManager.instance.userId);
+      tavoloLat = occ?.lat;
+      tavoloLng = occ?.lng;
+      await _setTavolo(occ?.id);
       await _caricaEdifici();
     } finally {
       ready = true; // qualunque cosa accada sblocchiamo la UI
@@ -105,24 +108,29 @@ class MainController extends ChangeNotifier {
   //avvio o interruzione del servizio pingservice per verificare la posizione e l'occupazione
   Future<void> _sincronizzaServizio() async {
     final id = tavoloAttuale;
-    _heartbeat?.cancel();
-    _heartbeat = null;
-
     if (id != null) {
-      await PingService.start(
+      await GpsService.start(
         idTavolo: id,
         userId: SessionManager.instance.userId,
         lat: tavoloLat,
         lng: tavoloLng,
+        onLiberato: _onLiberatoDalServizio,
       );
-      _heartbeat = Timer.periodic(
-          const Duration(seconds: 5), (_) => PingService.sendHeartbeat());
     } else {
       tavoloLat = null;
       tavoloLng = null;
-      await PingService.stop();
+      await GpsService.stop();
     }
   }
+  void _onLiberatoDalServizio() {
+    tavoloAttuale = null;
+    infoTavolo = null;
+    tavoloLat = null;
+    tavoloLng = null;
+    refreshTick++;
+    _notify();
+  }
+
 
   Future<void> onTavoloOccupato(int idTavolo, double? lat, double? lng) async {
     tavoloLat = lat;
@@ -163,8 +171,6 @@ class MainController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _heartbeat?.cancel();
-    FlutterForegroundTask.removeTaskDataCallback(_onTaskData);
     super.dispose();
   }
 }

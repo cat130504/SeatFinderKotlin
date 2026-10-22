@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../auth/session_manager.dart';
+import '../../services/gps_service.dart';
 import '../../services/permissions.dart';
 import '../components/expandable_fab_menu.dart';
 import '../components/plan_badge.dart';
@@ -42,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
 
     //richiede i permessi necessari per il funzionamento dell'applicazione
-    richiediPermessiIniziali();
+    GpsService.richiediPermessi();
   }
 
   @override
