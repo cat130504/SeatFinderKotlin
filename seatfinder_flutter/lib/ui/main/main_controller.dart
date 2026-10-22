@@ -30,8 +30,6 @@ class MainController extends ChangeNotifier {
   //ottiene tutti i tavoli e gli edifici
   final _tavoli = TavoloRepository(AppSupabase.client);
   final _edificiRepo = EdificioRepository(AppSupabase.client);
-  Timer? _heartbeatTimer;
-
 
   //dichiarazione dello stato reattivo
   int? tavoloAttuale;

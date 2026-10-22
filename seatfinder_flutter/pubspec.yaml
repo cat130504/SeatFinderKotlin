@@ -1,4 +1,4 @@
-name: seatfinder
+name: SFflutter
 description: SeatFinder - porting Flutter dell'app Android (Kotlin / Jetpack Compose).
 publish_to: 'none'
 version: 1.0.0+1

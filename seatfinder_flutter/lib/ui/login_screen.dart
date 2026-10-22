@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/esse3_auth_api.dart';
 import '../auth/session_manager.dart';
