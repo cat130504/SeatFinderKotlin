@@ -10,6 +10,7 @@ import com.example.seatfinder.data.remote.dto.OccupazioneUtenteDto
 import com.example.seatfinder.data.remote.dto.TavoloDto
 import com.example.seatfinder.data.remote.dto.TavoloUpdate
 import com.example.seatfinder.data.remote.dto.TavoloUtente
+import com.example.seatfinder.domain.model.OccupazioneUtente
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
@@ -72,7 +73,7 @@ object TavoloRepository {
     //2. RPC decPostiTavolo (decrementa postiDisponibili di 1)
     //3. Inserisce una riga in "occupazione" con timestamp e coordinate
     @OptIn(ExperimentalTime::class)
-    suspend fun occupaTavolo(idTavolo: Int, idUtente: Int, lat: Double? = null, lng: Double? = null) {
+    suspend fun occupaTavolo(idTavolo: Int, idUtente: Int, lat: Double?, lng: Double?) {
         try {
             withContext(Dispatchers.IO) {
 
@@ -166,6 +167,13 @@ object TavoloRepository {
             Log.e("DB_ERROR", "Errore liberazione tavolo", e)
             false
         }
+    }
+
+    suspend fun pingOccupazione(idTavolo: Int, idUtente: Int){
+        SupabaseClient.client.postgrest.rpc(
+            "ping_occupazione",
+            mapOf("p_tavolo" to idTavolo, "p_utente" to idUtente)
+        )
     }
 
     //Id del tavolo attualmente occupato dall'utente, o null se non ne occupa nessuno

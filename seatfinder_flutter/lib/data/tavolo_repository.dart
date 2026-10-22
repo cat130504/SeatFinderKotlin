@@ -31,18 +31,17 @@ class TavoloRepository {
   Future<bool> occupaTavolo(int idTavolo, int idUtente,
       {double? lat, double? lng}) async {
     try {
-      await _db.from('tavolo').update({'is_occupato': true}).eq('id', idTavolo);
-
-      await _db.rpc('decPostiTavolo', params: {'tavolo_id': idTavolo});
-
       await _db.from('occupazione').insert({
         'id_utente': idUtente,
         'id_tavolo': idTavolo,
         // UTC con "Z": istante corretto indipendentemente dal fuso del telefono
-        'data_occupazione': DateTime.now().toUtc().toIso8601String(),
+        'data_occupazione': DateTime.now().toLocal().toIso8601String(),
         'lat_occupazione': lat,
         'lng_occupazione': lng,
       });
+      await _db.from('tavolo').update({'is_occupato': true}).eq('id', idTavolo);
+      await _db.rpc('decPostiTavolo', params: {'tavolo_id': idTavolo});
+
       return true;
     } catch (e) {
       debugPrint('DB_ERROR Errore occupazione tavolo: $e');

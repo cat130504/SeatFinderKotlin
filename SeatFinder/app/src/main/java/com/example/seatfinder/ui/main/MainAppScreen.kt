@@ -70,8 +70,7 @@ fun MainAppScreen(viewModel: MainViewModel = viewModel()) {
     LaunchedEffect(tavoloAttuale) {
         val id = tavoloAttuale
         if (id != null) {
-            PingServiceLauncher.start(context, id, viewModel.tavoloLat, viewModel.tavoloLng)
-        } else {
+            PingServiceLauncher.start(context, id, SessionManager.userId, viewModel.tavoloLat, viewModel.tavoloLng)        } else {
             PingServiceLauncher.stop(context)
         }
     }

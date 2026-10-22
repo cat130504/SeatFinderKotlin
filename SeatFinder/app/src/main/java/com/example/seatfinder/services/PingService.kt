@@ -15,6 +15,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import com.example.seatfinder.auth.SessionManager
 
 //"Guardiano" del tavolo occupato: controlla periodicamente se l'utente è ancora vicino al tavolo.
 //Se si allontana troppo, mostra una notifica con due scelte (Mantieni / Libera)
@@ -26,12 +27,16 @@ class PingService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
 
     private var pingJob: Job? = null
+    private var gpsJob: Job? = null
+
     private var liberazioneJob: Job? = null
     private var timeoutAllontanamentoJob: Job? = null
     private var pausaProrogaJob: Job? = null
 
     //Dati del tavolo attuale (ricevuti via Intent all'avvio)
     private var idTavoloAttuale: Int? = null
+
+    private var userId: Int = -1
     private var lat: Double? = null
     private var lng: Double? = null
 
@@ -50,7 +55,7 @@ class PingService : Service() {
         const val NOTIFICATION_ID = 1
         const val NOTIFICATION_ID_LIBERATO = 2
         const val NOTIFICATION_ID_CONFERMA = 3
-
+        const val EXTRA_USER_ID = "user_id"
         const val EXTRA_ID_TAVOLO = "id_tavolo"
         const val EXTRA_LAT = "lat"
         const val EXTRA_LNG = "lng"
@@ -85,8 +90,7 @@ class PingService : Service() {
         }
 
         val idTavolo = intent?.getIntExtra(EXTRA_ID_TAVOLO, -1) ?: -1
-
-        //Notifica persistente: senza questo il sistema ucciderebbe il servizio
+        userId = intent?.getIntExtra(EXTRA_USER_ID, -1) ?: -1        //Notifica persistente: senza questo il sistema ucciderebbe il servizio
         startForeground(NOTIFICATION_ID, creaNotifica())
 
         liberazioneJob?.cancel()
@@ -98,16 +102,29 @@ class PingService : Service() {
             if (intent!!.hasExtra(EXTRA_LAT)) lat = intent.getDoubleExtra(EXTRA_LAT, 0.0)
             if (intent.hasExtra(EXTRA_LNG)) lng = intent.getDoubleExtra(EXTRA_LNG, 0.0)
             avviaPing(idTavolo)
+            avviaGps(idTavolo)
         }
 
         return START_STICKY
     }
 
-    //Loop di controllo: ogni ciclo legge la posizione e la confronta con l'ancora.
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    //Loop di aggiornamento ping, ogni 60 secondi
     private fun avviaPing(idTavolo: Int) {
         pingJob?.cancel()
         pingJob = serviceScope.launch {
+            while (isActive) {
+
+                TavoloRepository.pingOccupazione(idTavolo, SessionManager.userId)
+                delay(60_000) //aggiornamento ping ogni minuto
+            }
+        }
+    }
+
+    //Loop di controllo posizione: ogni ciclo legge la posizione e la confronta con l'ancora.
+    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
+    private fun avviaGps(idTavolo: Int) {
+        gpsJob?.cancel()
+        gpsJob = serviceScope.launch {
             while (isActive) {
 
                 //Controlla solo se non c'è già una notifica aperta o una pausa in corso
@@ -115,7 +132,7 @@ class PingService : Service() {
                     controllaDistanza(idTavolo)
                 }
 
-                delay(5_000) //controllo distanza ogni 5 min
+                delay(60_000) //controllo distanza ogni minuto
             }
         }
     }
@@ -220,7 +237,7 @@ class PingService : Service() {
         if (idTavolo != null) {
             liberazioneJob?.cancel()
             liberazioneJob = serviceScope.launch {
-                delay(SECONDI_GRAZIA * 1000)
+                delay(SECONDI_GRAZIA * 1000) //s in ms
                 TavoloRepository.liberaTavolo(idTavolo)
                 TavoloRepository.setTavolo(null)
                 mostraNotificaLiberato(1)
@@ -326,6 +343,7 @@ class PingService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         pingJob?.cancel()
+        gpsJob?.cancel()
         liberazioneJob?.cancel()
         timeoutAllontanamentoJob?.cancel()
         pausaProrogaJob?.cancel()

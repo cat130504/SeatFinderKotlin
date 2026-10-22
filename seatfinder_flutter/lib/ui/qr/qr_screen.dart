@@ -115,7 +115,7 @@ class _QrScreenState extends State<QrScreen> {
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.high,
-            timeLimit: const Duration(seconds: 8),
+            timeLimit: Duration(seconds: 8),
           ),
         );
         lat = pos.latitude;
