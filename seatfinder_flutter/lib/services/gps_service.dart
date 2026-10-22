@@ -10,8 +10,8 @@ import '../data/tavolo_repository.dart';
 
 class GpsConfig {
   static const distanzaMassimaMetri = 50.0;
-  static const accuratezzaMaxMetri = 50.0; // scarta fix troppo imprecisi (falsi allarmi al chiuso)
-  static const intervalloPing = Duration(seconds: 30);
+  static const accuratezzaMaxMetri = 50.0;
+  static const intervalloPing = Duration(minutes: 2);
   static const timeoutRisposta = Duration(minutes: 10);
   static const durataProroga = Duration(minutes: 10);
 }
