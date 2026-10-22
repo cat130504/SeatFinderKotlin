@@ -11,7 +11,7 @@ import '../data/tavolo_repository.dart';
 class GpsConfig {
   static const distanzaMassimaMetri = 50.0;
   static const accuratezzaMaxMetri = 50.0;
-  static const intervalloPing = Duration(minutes: 2);
+  static const intervalloPing = Duration(minutes: 1);
   static const timeoutRisposta = Duration(minutes: 10);
   static const durataProroga = Duration(minutes: 10);
 }
