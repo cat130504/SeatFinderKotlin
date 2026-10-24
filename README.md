@@ -8,12 +8,7 @@ Il login puó essere effettuato con credenziali universitarie del portale Esse3,
 SUPABASE_URL=https://uhqhcaixkfjidqxmnlxx.supabase.co
 SUPABASE_KEY=sb_publishable_XNwi1UCYX5lgKnpqA8X43w_O-2BMTUK
 ```
-## Progetto Flutter
-### Argomenti da inserire in Additional Run Args
-``` dart
---dart-define=SUPABASE_URL=https://uhqhcaixkfjidqxmnlxx.supabase.co
---dart-define=SUPABASE_KEY=sb_publishable_XNwi1UCYX5lgKnpqA8X43w_O-2BMTUK
-```
+
 
 ## Dipendenze
 1. Android SDK 37.0
