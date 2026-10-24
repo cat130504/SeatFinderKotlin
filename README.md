@@ -1,5 +1,5 @@
 # SeatFinder: Progetto Programmazione Mobile
-## Membri: Carotti Thomas, Del Moro Michele, Di Donna Bruno
+## Membri: Carotti Thomas, Del Moro Michele, Didonna Bruno
 ## Login
 Il login puó essere effettuato con credenziali universitarie del portale Esse3, oppure tramite un account di prova con matricola: "prova" e password: "prova".
 ## Progetto Kotlin
